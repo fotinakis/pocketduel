@@ -385,14 +385,28 @@ function buildHandOrder() {
 
 const HAND_ORDER = buildHandOrder();
 
-function getFilenameInfo(h1, h2) {
+function getMatchupInfo(h1, h2) {
   const i1 = HAND_ORDER.indexOf(h1);
   const i2 = HAND_ORDER.indexOf(h2);
   if (i1 <= i2) {
-    return { file: `equity_data/${h1}_vs_${h2}.json`, swapped: false };
+    return { key: `${h1}_vs_${h2}`, swapped: false };
   } else {
-    return { file: `equity_data/${h2}_vs_${h1}.json`, swapped: true };
+    return { key: `${h2}_vs_${h1}`, swapped: true };
   }
+}
+
+// Load all.json once and cache it
+let allData = null;
+let allDataPromise = null;
+
+async function getAllData() {
+  if (allData) return allData;
+  if (!allDataPromise) {
+    allDataPromise = fetch('all.json')
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(d => { allData = d; return d; });
+  }
+  return allDataPromise;
 }
 
 // State
@@ -681,18 +695,17 @@ function showMatchup(data, swapped) {
 }
 
 async function fetchAndShowEquity() {
-  const { file, swapped } = getFilenameInfo(hand1, hand2);
+  const { key, swapped } = getMatchupInfo(hand1, hand2);
   showLoading();
   try {
-    const resp = await fetch(file);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
+    const all = await getAllData();
+    const data = all[key];
+    if (!data) throw new Error('key not found');
     showMatchup(data, swapped);
   } catch (e) {
     showError(
-      `Could not load <code>${file}</code><br><br>` +
-      `Run <code>pocketduel --everything</code> to generate equity data,<br>` +
-      `then serve from project root: <code>python3 -m http.server 8080</code>`
+      `Could not load equity data.<br><br>` +
+      `Run <code>pocketduel --everything</code>, then <code>npm run build</code> in <code>web/</code>.`
     );
   }
 }

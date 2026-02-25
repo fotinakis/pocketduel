@@ -138,7 +138,8 @@ pub fn run_everything(output_dir: &str) {
         .count();
 
     if already_done == total_matchups {
-        println!("All {} matchups already complete (version {}).", total_matchups, CURRENT_VERSION);
+        println!("All {} matchups already complete (version {}). Writing all.json...", total_matchups, CURRENT_VERSION);
+        write_all_json(dir, &types);
         return;
     }
 
@@ -246,6 +247,36 @@ pub fn run_everything(output_dir: &str) {
     let elapsed = start.elapsed().as_secs_f64();
     println!("\nFinished in {:.1}s — {} computed, {} skipped, {} errors.",
         elapsed, computed, skipped, errors);
+
+    write_all_json(dir, &types);
+}
+
+fn write_all_json(dir: &Path, types: &[HandType]) {
+    let n = types.len();
+    let all_path = dir.join("all.json");
+
+    let mut map = serde_json::Map::new();
+    for i in 0..n {
+        for j in i..n {
+            let key = format!("{}_vs_{}", types[i].name(), types[j].name());
+            let path = dir.join(format!("{}.json", key));
+            if let Ok(content) = fs::read_to_string(&path) {
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                    map.insert(key, val);
+                }
+            }
+        }
+    }
+
+    let count = map.len();
+    let json = serde_json::to_string(&serde_json::Value::Object(map))
+        .expect("all.json serialization failed");
+    let tmp = all_path.with_extension("tmp");
+    fs::write(&tmp, &json).expect("failed to write all.json tmp");
+    fs::rename(&tmp, &all_path).expect("failed to rename all.json");
+
+    let kb = json.len() / 1024;
+    println!("Wrote all.json — {} matchups, {}KB.", count, kb);
 }
 
 // ---------------------------------------------------------------------------
