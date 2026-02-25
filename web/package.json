@@ -1,7 +1,0 @@
-{
-  "name": "pocketduel-web",
-  "private": true,
-  "scripts": {
-    "dev": "npx serve ."
-  }
-}

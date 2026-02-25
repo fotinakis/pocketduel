@@ -114,3 +114,9 @@ cargo test -- --skip sim::tests
                               # includes equity spot-checks, ~5s release
 cargo test                    # full suite including simulation integration tests
 ```
+
+# Run web
+
+```bash
+npx serve web/
+```
