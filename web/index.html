@@ -3,21 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>pocketduel — Preflop Equity</title>
+<title>POCKETDUEL // PREFLOP OPS</title>
 <style>
   :root {
-    --bg:        #0d0d17;
-    --surface:   #16162a;
-    --surface2:  #1e1e38;
-    --text:      #e2e8f0;
-    --muted:     #6b7280;
-    --hand1:     #4f9cf9;
-    --hand1-bg:  #1e3a5f;
-    --hand2:     #f97316;
-    --hand2-bg:  #3d1f0a;
-    --red-suit:  #ef4444;
-    --card-bg:   #f0ede8;
-    --card-text: #111111;
+    --bg:         #06060f;
+    --surface:    #0a0a1a;
+    --surface2:   #0e0e22;
+    --text:       #a0c0e0;
+    --muted:      #2a3a55;
+    --hand1:      #00f5ff;
+    --hand1-bg:   #001a20;
+    --hand1-glow: rgba(0,245,255,0.25);
+    --hand2:      #ff0090;
+    --hand2-bg:   #1a0010;
+    --hand2-glow: rgba(255,0,144,0.25);
+    --red-suit:   #ff2255;
+    --card-bg:    #08081a;
+    --card-border:#1e2e4a;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -37,79 +39,94 @@
     height: 100dvh;
   }
 
+  /* scanlines */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,0.12) 3px,
+      rgba(0,0,0,0.12) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
   /* ── Selection bar ── */
   .toggle-bar {
     display: flex;
-    gap: 8px;
-    padding: 6px 8px;
+    gap: 6px;
+    padding: 5px 7px;
     background: var(--surface);
-    border-bottom: 1px solid #2a2a4a;
+    border-bottom: 1px solid #0f1f30;
     flex-shrink: 0;
   }
 
   .toggle-btn {
     flex: 1;
     padding: 5px 10px;
-    border-radius: 6px;
-    border: 2px solid transparent;
+    border-radius: 0;
+    border: 1px solid var(--muted);
     background: var(--surface2);
     color: var(--muted);
     cursor: pointer;
     font-family: inherit;
     font-size: 11px;
-    font-weight: 600;
-    text-align: center;
-    transition: all 0.15s;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: all 0.12s;
     user-select: none;
-  }
-
-  .toggle-btn.active-1 {
-    border-color: var(--hand1);
-    background: var(--hand1-bg);
-    color: var(--hand1);
-  }
-
-  .toggle-btn.active-2 {
-    border-color: var(--hand2);
-    background: var(--hand2-bg);
-    color: var(--hand2);
-  }
-
-  .toggle-btn {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 6px;
   }
 
-  .btn-label { flex: 1; text-align: left; }
-
-  .lock-icon {
-    font-size: 13px;
-    opacity: 0.45;
-    padding: 0 2px;
-    cursor: pointer;
-    transition: opacity 0.15s;
-    flex-shrink: 0;
+  .toggle-btn.active-1 {
+    border-color: var(--hand1);
+    background: var(--hand1-bg);
+    color: var(--hand1);
+    box-shadow: 0 0 10px var(--hand1-glow), inset 0 0 8px var(--hand1-glow);
   }
 
-  .lock-icon:hover { opacity: 0.9; }
-
-  .toggle-btn.locked .lock-icon { opacity: 1; }
+  .toggle-btn.active-2 {
+    border-color: var(--hand2);
+    background: var(--hand2-bg);
+    color: var(--hand2);
+    box-shadow: 0 0 10px var(--hand2-glow), inset 0 0 8px var(--hand2-glow);
+  }
 
   .toggle-btn.locked-1 {
     border-color: var(--hand1);
     background: var(--hand1-bg);
     color: var(--hand1);
-    opacity: 0.55;
+    opacity: 0.5;
   }
 
   .toggle-btn.locked-2 {
     border-color: var(--hand2);
     background: var(--hand2-bg);
     color: var(--hand2);
-    opacity: 0.55;
+    opacity: 0.5;
   }
+
+  .btn-label { flex: 1; text-align: left; }
+
+  .lock-icon {
+    font-size: 12px;
+    opacity: 0.35;
+    padding: 0 2px;
+    cursor: pointer;
+    transition: opacity 0.12s;
+    flex-shrink: 0;
+  }
+
+  .lock-icon:hover { opacity: 1; }
+  .toggle-btn.locked .lock-icon { opacity: 1; }
 
   /* ── Sections ── */
   .range-section {
@@ -127,7 +144,7 @@
     flex-direction: column;
     justify-content: center;
     padding: 8px 12px;
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid #0f1f30;
   }
 
   /* ── Range grid ── */
@@ -144,43 +161,64 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 2px;
+    border-radius: 0;
     cursor: pointer;
     user-select: none;
     transition: filter 0.1s;
     font-size: inherit;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: -0.02em;
+    text-transform: uppercase;
   }
 
-  .grid-cell:hover {
-    filter: brightness(1.25);
-  }
+  .grid-cell:hover { filter: brightness(1.6); }
 
   .cell-header {
     color: var(--muted);
     font-size: 0.85em;
     cursor: default;
+    text-transform: uppercase;
   }
 
   .cell-header:hover { filter: none; }
 
-  .cell-pair    { background: #24243e; }
-  .cell-suited  { background: #1c2a3a; }
-  .cell-offsuit { background: #211c30; }
+  .cell-pair    { background: #12122a; color: #4466aa; }
+  .cell-suited  { background: #0a1a22; color: #225566; }
+  .cell-offsuit { background: #160a20; color: #442255; }
 
-  .cell-sel1 { background: var(--hand1-bg) !important; outline: 2px solid var(--hand1); outline-offset: -1px; color: var(--hand1); }
-  .cell-sel2 { background: var(--hand2-bg) !important; outline: 2px solid var(--hand2); outline-offset: -1px; color: var(--hand2); }
+  .cell-sel1 {
+    background: var(--hand1-bg) !important;
+    outline: 1px solid var(--hand1);
+    outline-offset: -1px;
+    color: var(--hand1) !important;
+    text-shadow: 0 0 8px var(--hand1);
+    box-shadow: inset 0 0 10px var(--hand1-glow);
+  }
+
+  .cell-sel2 {
+    background: var(--hand2-bg) !important;
+    outline: 1px solid var(--hand2);
+    outline-offset: -1px;
+    color: var(--hand2) !important;
+    text-shadow: 0 0 8px var(--hand2);
+    box-shadow: inset 0 0 10px var(--hand2-glow);
+  }
 
   /* ── Matchup section ── */
   .matchup-placeholder {
     color: var(--muted);
     text-align: center;
-    font-size: 13px;
-    line-height: 1.7;
+    font-size: 12px;
+    line-height: 2;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
   }
 
-  .matchup-placeholder .arrow { font-size: 20px; margin: 4px 0; }
+  .matchup-placeholder .arrow {
+    font-size: 18px;
+    margin: 4px 0;
+    color: #1a3a55;
+  }
 
   .hands-row {
     display: flex;
@@ -197,18 +235,18 @@
     align-items: flex-end;
   }
 
-  /* Portrait playing card */
+  /* Portrait playing card — dark cyberpunk style */
   .card {
     background: var(--card-bg);
-    color: var(--card-text);
-    border-radius: 5px;
+    border: 1px solid var(--card-border);
+    border-radius: 0;
     width: clamp(40px, 12vmin, 64px);
     height: clamp(56px, 17vmin, 90px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     padding: 3px 4px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    box-shadow: 0 0 12px rgba(0,0,0,0.7);
     position: relative;
     flex-shrink: 0;
   }
@@ -226,83 +264,106 @@
     align-self: flex-end;
   }
 
-  .card .red  { color: var(--red-suit); }
-  .card .black { color: #111; }
+  .card .red   { color: var(--red-suit); text-shadow: 0 0 6px rgba(255,34,85,0.6); }
+  .card .black { color: #7090c0; text-shadow: 0 0 6px rgba(80,120,200,0.4); }
 
   .vs-text {
     color: var(--muted);
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     align-self: center;
     padding: 0 4px;
-    margin-bottom: 0;
   }
 
   /* ── Equity bars ── */
   .equity-section { display: flex; flex-direction: column; gap: 10px; }
 
-  .split-bar-wrap { position: relative; height: 28px; border-radius: 6px; overflow: hidden; background: #2a2a4a; }
-
-  .split-bar {
-    display: flex;
-    height: 100%;
+  .split-bar-wrap {
+    position: relative;
+    height: 24px;
+    border-radius: 0;
+    overflow: hidden;
+    background: #0a0a1e;
+    border: 1px solid #1a1a3a;
   }
 
-  .bar-h1 { background: var(--hand1); transition: width 0.4s ease; }
-  .bar-h2 { background: var(--hand2); transition: width 0.4s ease; }
-  .bar-tie { background: #44445a; transition: width 0.4s ease; }
+  .split-bar { display: flex; height: 100%; }
+
+  .bar-h1 {
+    background: var(--hand1);
+    box-shadow: 4px 0 12px var(--hand1-glow);
+    transition: width 0.4s ease;
+  }
+  .bar-h2 {
+    background: var(--hand2);
+    box-shadow: -4px 0 12px var(--hand2-glow);
+    transition: width 0.4s ease;
+  }
+  .bar-tie { background: #1a1a3a; transition: width 0.4s ease; }
 
   .bar-labels {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-top: 4px;
+    margin-top: 6px;
   }
 
-  .pct-h1 { color: var(--hand1); font-size: clamp(14px, 3vw, 22px); font-weight: 700; }
-  .pct-h2 { color: var(--hand2); font-size: clamp(14px, 3vw, 22px); font-weight: 700; text-align: right; }
+  .pct-h1 {
+    color: var(--hand1);
+    font-size: clamp(14px, 3vw, 22px);
+    font-weight: 700;
+    text-shadow: 0 0 12px var(--hand1);
+  }
+  .pct-h2 {
+    color: var(--hand2);
+    font-size: clamp(14px, 3vw, 22px);
+    font-weight: 700;
+    text-align: right;
+    text-shadow: 0 0 12px var(--hand2);
+  }
 
   .ties-line {
     text-align: center;
     color: var(--muted);
-    font-size: 11px;
+    font-size: 10px;
     margin-top: 6px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   .loading {
     text-align: center;
     color: var(--muted);
-    font-size: 12px;
+    font-size: 11px;
     padding: 16px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   .error-msg {
     text-align: center;
-    color: #f87171;
+    color: var(--hand2);
     font-size: 11px;
     padding: 8px;
-    line-height: 1.5;
+    line-height: 1.6;
   }
 
   /* ── Desktop layout ── */
   @media (min-width: 768px) {
     body { flex-direction: row; }
 
-    .toggle-bar {
-      /* moves into range-section on desktop */
-      display: none;
-    }
+    .toggle-bar { display: none; }
 
     .range-section {
       flex: 0 0 42%;
-      border-right: 1px solid #2a2a4a;
+      border-right: 1px solid #0f1f30;
       border-top: none;
       padding: 8px;
     }
 
-    .range-section .toggle-bar-inner {
-      display: flex;
-    }
+    .range-section .toggle-bar-inner { display: flex; }
 
     .matchup-section {
       flex: 0 0 58%;
@@ -311,15 +372,13 @@
       justify-content: center;
     }
 
-    .range-grid {
-      font-size: clamp(8px, 1vw, 13px);
-    }
+    .range-grid { font-size: clamp(8px, 1vw, 13px); }
   }
 
-  /* inner toggle bar for desktop (inside range section) */
+  /* inner toggle bar for desktop */
   .toggle-bar-inner {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 6px;
     flex-shrink: 0;
   }
@@ -350,9 +409,9 @@
 <!-- Matchup section -->
 <div class="matchup-section" id="matchupSection">
   <div class="matchup-placeholder" id="matchupPlaceholder">
-    <div class="arrow">♠♥♦♣</div>
-    <div>Select two hands from the grid</div>
-    <div style="font-size:11px;margin-top:6px;color:var(--muted)">Click a cell to pick Hand 1, then another for Hand 2</div>
+    <div class="arrow">// POCKETDUEL //</div>
+    <div>awaiting hand selection</div>
+    <div style="margin-top:6px;color:#1a2a40">select hand_01 &gt; select hand_02 &gt; run_sim</div>
   </div>
   <div id="matchupContent" style="display:none"></div>
 </div>
@@ -389,24 +448,10 @@ function getMatchupInfo(h1, h2) {
   const i1 = HAND_ORDER.indexOf(h1);
   const i2 = HAND_ORDER.indexOf(h2);
   if (i1 <= i2) {
-    return { key: `${h1}_vs_${h2}`, swapped: false };
+    return { file: `equity_data/${h1}_vs_${h2}.json`, swapped: false };
   } else {
-    return { key: `${h2}_vs_${h1}`, swapped: true };
+    return { file: `equity_data/${h2}_vs_${h1}.json`, swapped: true };
   }
-}
-
-// Load all.json once and cache it
-let allData = null;
-let allDataPromise = null;
-
-async function getAllData() {
-  if (allData) return allData;
-  if (!allDataPromise) {
-    allDataPromise = fetch('all.json')
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(d => { allData = d; return d; });
-  }
-  return allDataPromise;
 }
 
 // State
@@ -591,7 +636,7 @@ function showLoading() {
   document.getElementById('matchupPlaceholder').style.display = 'none';
   const content = document.getElementById('matchupContent');
   content.style.display = 'block';
-  content.innerHTML = '<div class="loading">Loading equity data…</div>';
+  content.innerHTML = '<div class="loading">// computing equity...</div>';
 }
 
 function showError(msg) {
@@ -695,17 +740,17 @@ function showMatchup(data, swapped) {
 }
 
 async function fetchAndShowEquity() {
-  const { key, swapped } = getMatchupInfo(hand1, hand2);
+  const { file, swapped } = getMatchupInfo(hand1, hand2);
   showLoading();
   try {
-    const all = await getAllData();
-    const data = all[key];
-    if (!data) throw new Error('key not found');
+    const resp = await fetch(file);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
     showMatchup(data, swapped);
   } catch (e) {
     showError(
       `Could not load equity data.<br><br>` +
-      `Run <code>pocketduel --everything</code>, then <code>npm run build</code> in <code>web/</code>.`
+      `Run <code>pocketduel --everything</code> to generate equity files.`
     );
   }
 }
