@@ -2,6 +2,7 @@
   "name": "pocketduel-web",
   "private": true,
   "scripts": {
-    "build": "cp ../equity_data/all.json ./all.json"
+    "build": "cp ../equity_data/all.json ./all.json",
+    "dev": "npx serve ."
   }
 }
