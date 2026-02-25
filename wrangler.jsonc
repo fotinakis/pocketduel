@@ -5,11 +5,5 @@
   "observability": {
     "enabled": true
   },
-  "assets": {
-    "directory": "web"
-  },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
   "pages_build_output_dir": "web/"
 }
