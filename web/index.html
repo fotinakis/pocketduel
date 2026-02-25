@@ -689,10 +689,7 @@ async function fetchAndShowEquity() {
     const data = await resp.json();
     showMatchup(data, swapped);
   } catch (e) {
-    showError(
-      `Could not load equity data.<br><br>` +
-      `Run <code>pocketduel --everything</code> to generate equity files.`
-    );
+    showError(`Could not load equity data.`);
   }
 }
 
