@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pocketduel — Preflop Equity</title>
+<style>
+  :root {
+    --bg:        #0d0d17;
+    --surface:   #16162a;
+    --surface2:  #1e1e38;
+    --text:      #e2e8f0;
+    --muted:     #6b7280;
+    --hand1:     #4f9cf9;
+    --hand1-bg:  #1e3a5f;
+    --hand2:     #f97316;
+    --hand2-bg:  #3d1f0a;
+    --red-suit:  #ef4444;
+    --card-bg:   #f0ede8;
+    --card-text: #111111;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+  }
+
+  /* ── Selection bar ── */
+  .toggle-bar {
+    display: flex;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--surface);
+    border-bottom: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .toggle-btn.active-1 {
+    border-color: var(--hand1);
+    background: var(--hand1-bg);
+    color: var(--hand1);
+  }
+
+  .toggle-btn.active-2 {
+    border-color: var(--hand2);
+    background: var(--hand2-bg);
+    color: var(--hand2);
+  }
+
+  .toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .btn-label { flex: 1; text-align: left; }
+
+  .lock-icon {
+    font-size: 13px;
+    opacity: 0.45;
+    padding: 0 2px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+  }
+
+  .lock-icon:hover { opacity: 0.9; }
+
+  .toggle-btn.locked .lock-icon { opacity: 1; }
+
+  .toggle-btn.locked-1 {
+    border-color: var(--hand1);
+    background: var(--hand1-bg);
+    color: var(--hand1);
+    opacity: 0.55;
+  }
+
+  .toggle-btn.locked-2 {
+    border-color: var(--hand2);
+    background: var(--hand2-bg);
+    color: var(--hand2);
+    opacity: 0.55;
+  }
+
+  /* ── Sections ── */
+  .range-section {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 4px;
+  }
+
+  .matchup-section {
+    flex: 1 1 50%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 12px;
+    border-top: 1px solid #2a2a4a;
+  }
+
+  /* ── Range grid ── */
+  .range-grid {
+    display: grid;
+    grid-template-columns: 1.5em repeat(13, 1fr);
+    grid-template-rows: 1.5em repeat(13, 1fr);
+    flex: 1;
+    gap: 1px;
+    font-size: clamp(8px, 2.8vmin, 13px);
+  }
+
+  .grid-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    cursor: pointer;
+    user-select: none;
+    transition: filter 0.1s;
+    font-size: inherit;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .grid-cell:hover {
+    filter: brightness(1.25);
+  }
+
+  .cell-header {
+    color: var(--muted);
+    font-size: 0.85em;
+    cursor: default;
+  }
+
+  .cell-header:hover { filter: none; }
+
+  .cell-pair    { background: #24243e; }
+  .cell-suited  { background: #1c2a3a; }
+  .cell-offsuit { background: #211c30; }
+
+  .cell-sel1 { background: var(--hand1-bg) !important; outline: 2px solid var(--hand1); outline-offset: -1px; color: var(--hand1); }
+  .cell-sel2 { background: var(--hand2-bg) !important; outline: 2px solid var(--hand2); outline-offset: -1px; color: var(--hand2); }
+
+  /* ── Matchup section ── */
+  .matchup-placeholder {
+    color: var(--muted);
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .matchup-placeholder .arrow { font-size: 20px; margin: 4px 0; }
+
+  .hands-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .cards-row {
+    display: flex;
+    gap: 5px;
+    align-items: flex-end;
+  }
+
+  /* Portrait playing card */
+  .card {
+    background: var(--card-bg);
+    color: var(--card-text);
+    border-radius: 5px;
+    width: clamp(40px, 12vmin, 64px);
+    height: clamp(56px, 17vmin, 90px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .card .rank {
+    font-size: clamp(16px, 5vmin, 28px);
+    font-weight: 800;
+    line-height: 1;
+    align-self: flex-start;
+  }
+
+  .card .suit-sym {
+    font-size: clamp(16px, 5vmin, 28px);
+    line-height: 1;
+    align-self: flex-end;
+  }
+
+  .card .red  { color: var(--red-suit); }
+  .card .black { color: #111; }
+
+  .vs-text {
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 600;
+    align-self: center;
+    padding: 0 4px;
+    margin-bottom: 0;
+  }
+
+  /* ── Equity bars ── */
+  .equity-section { display: flex; flex-direction: column; gap: 10px; }
+
+  .split-bar-wrap { position: relative; height: 28px; border-radius: 6px; overflow: hidden; background: #2a2a4a; }
+
+  .split-bar {
+    display: flex;
+    height: 100%;
+  }
+
+  .bar-h1 { background: var(--hand1); transition: width 0.4s ease; }
+  .bar-h2 { background: var(--hand2); transition: width 0.4s ease; }
+  .bar-tie { background: #44445a; transition: width 0.4s ease; }
+
+  .bar-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 4px;
+  }
+
+  .pct-h1 { color: var(--hand1); font-size: clamp(14px, 3vw, 22px); font-weight: 700; }
+  .pct-h2 { color: var(--hand2); font-size: clamp(14px, 3vw, 22px); font-weight: 700; text-align: right; }
+
+  .ties-line {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  .loading {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 16px;
+  }
+
+  .error-msg {
+    text-align: center;
+    color: #f87171;
+    font-size: 11px;
+    padding: 8px;
+    line-height: 1.5;
+  }
+
+  /* ── Desktop layout ── */
+  @media (min-width: 768px) {
+    body { flex-direction: row; }
+
+    .toggle-bar {
+      /* moves into range-section on desktop */
+      display: none;
+    }
+
+    .range-section {
+      flex: 0 0 42%;
+      border-right: 1px solid #2a2a4a;
+      border-top: none;
+      padding: 8px;
+    }
+
+    .range-section .toggle-bar-inner {
+      display: flex;
+    }
+
+    .matchup-section {
+      flex: 0 0 58%;
+      border-top: none;
+      padding: 20px 28px;
+      justify-content: center;
+    }
+
+    .range-grid {
+      font-size: clamp(8px, 1vw, 13px);
+    }
+  }
+
+  /* inner toggle bar for desktop (inside range section) */
+  .toggle-bar-inner {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 767px) {
+    .toggle-bar-inner { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Mobile toggle bar (outside sections) -->
+<div class="toggle-bar" id="toggleBarMobile">
+  <button class="toggle-btn active-1" id="btn1Mobile">● Hand 1</button>
+  <button class="toggle-btn" id="btn2Mobile">  Hand 2</button>
+</div>
+
+<!-- Range section -->
+<div class="range-section">
+  <!-- Desktop toggle bar (inside range section) -->
+  <div class="toggle-bar-inner">
+    <button class="toggle-btn active-1" id="btn1Desktop">● Hand 1</button>
+    <button class="toggle-btn" id="btn2Desktop">  Hand 2</button>
+  </div>
+  <div class="range-grid" id="rangeGrid"></div>
+</div>
+
+<!-- Matchup section -->
+<div class="matchup-section" id="matchupSection">
+  <div class="matchup-placeholder" id="matchupPlaceholder">
+    <div class="arrow">♠♥♦♣</div>
+    <div>Select two hands from the grid</div>
+    <div style="font-size:11px;margin-top:6px;color:var(--muted)">Click a cell to pick Hand 1, then another for Hand 2</div>
+  </div>
+  <div id="matchupContent" style="display:none"></div>
+</div>
+
+<script>
+const RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
+
+// Build canonical hand order matching Rust all_hand_types()
+// 1. Pairs AA→22
+// 2. Suited AKs→32s (r1 from A to 3, r2 from r1-1 down to 2)
+// 3. Offsuit AKo→32o (same order)
+function buildHandOrder() {
+  const order = [];
+  // Pairs
+  for (let i = 0; i < 13; i++) order.push(RANKS[i] + RANKS[i]);
+  // Suited: r1 index 0(A) to 11(3), r2 from r1+1 to 12(2)
+  for (let i = 0; i < 12; i++) {
+    for (let j = i + 1; j < 13; j++) {
+      order.push(RANKS[i] + RANKS[j] + 's');
+    }
+  }
+  // Offsuit same order
+  for (let i = 0; i < 12; i++) {
+    for (let j = i + 1; j < 13; j++) {
+      order.push(RANKS[i] + RANKS[j] + 'o');
+    }
+  }
+  return order;
+}
+
+const HAND_ORDER = buildHandOrder();
+
+function getFilenameInfo(h1, h2) {
+  const i1 = HAND_ORDER.indexOf(h1);
+  const i2 = HAND_ORDER.indexOf(h2);
+  if (i1 <= i2) {
+    return { file: `equity_data/${h1}_vs_${h2}.json`, swapped: false };
+  } else {
+    return { file: `equity_data/${h2}_vs_${h1}.json`, swapped: true };
+  }
+}
+
+// State
+let selectingHand = 1;
+let hand1 = null;
+let hand2 = null;
+let lockedHand = null; // null | 1 | 2
+
+function setSelecting(n) {
+  if (lockedHand === n) return; // can't select into a locked slot
+  selectingHand = n;
+  updateToggleButtons();
+}
+
+function toggleLock(n) {
+  lockedHand = (lockedHand === n) ? null : n;
+  // If we just locked a hand, force selecting to the other slot
+  if (lockedHand !== null) selectingHand = lockedHand === 1 ? 2 : 1;
+  updateToggleButtons();
+}
+
+function updateToggleButtons() {
+  for (const [n, ids] of [[1, ['btn1Mobile','btn1Desktop']], [2, ['btn2Mobile','btn2Desktop']]]) {
+    const hand = n === 1 ? hand1 : hand2;
+    const isSelecting = selectingHand === n;
+    const isLocked = lockedHand === n;
+    const label = hand ? `● ${hand}` : `● Hand ${n}`;
+    const lockSym = isLocked ? '🔒' : '🔓';
+
+    let cls = 'toggle-btn';
+    if (isLocked)          cls += ` locked locked-${n}`;
+    else if (isSelecting)  cls += ` active-${n}`;
+
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      el.className = cls;
+      el.innerHTML = `<span class="btn-label">${label}</span><span class="lock-icon">${lockSym}</span>`;
+      el.onclick = () => setSelecting(n);
+      el.querySelector('.lock-icon').onclick = e => { e.stopPropagation(); toggleLock(n); };
+    }
+  }
+}
+
+// Cell name from grid coordinates
+function cellName(row, col) {
+  // row, col are 0-indexed rank indices
+  if (row === col) return RANKS[row] + RANKS[row];
+  if (row < col)  return RANKS[row] + RANKS[col] + 's';
+  return RANKS[col] + RANKS[row] + 'o';
+}
+
+// Build grid
+function buildGrid() {
+  const grid = document.getElementById('rangeGrid');
+  grid.innerHTML = '';
+
+  // Top-left corner
+  const corner = document.createElement('div');
+  corner.className = 'grid-cell cell-header';
+  grid.appendChild(corner);
+
+  // Column headers
+  for (const r of RANKS) {
+    const h = document.createElement('div');
+    h.className = 'grid-cell cell-header';
+    h.textContent = r;
+    grid.appendChild(h);
+  }
+
+  // Rows
+  for (let row = 0; row < 13; row++) {
+    // Row header
+    const rh = document.createElement('div');
+    rh.className = 'grid-cell cell-header';
+    rh.textContent = RANKS[row];
+    grid.appendChild(rh);
+
+    for (let col = 0; col < 13; col++) {
+      const name = cellName(row, col);
+      const cell = document.createElement('div');
+      cell.id = 'cell-' + name;
+      cell.className = 'grid-cell ' + (row === col ? 'cell-pair' : row < col ? 'cell-suited' : 'cell-offsuit');
+      cell.textContent = name;
+      cell.addEventListener('click', () => onCellClick(name));
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function onCellClick(name) {
+  // If one hand is locked, always fill the other slot
+  const target = lockedHand === 1 ? 2 : lockedHand === 2 ? 1 : selectingHand;
+  if (target === 1) {
+    hand1 = name;
+    if (lockedHand === null) selectingHand = 2;
+  } else {
+    hand2 = name;
+    if (lockedHand === null) selectingHand = 1;
+  }
+  pushHash();
+  renderGrid();
+  updateToggleButtons();
+  if (hand1 && hand2) {
+    if (hand1 === hand2) {
+      showError('Select two different hands (same hand vs itself is not supported).');
+    } else {
+      fetchAndShowEquity();
+    }
+  }
+}
+
+// ── URL hash state ──────────────────────────────────────────────────────────
+
+function pushHash() {
+  const h = hand1 && hand2 ? `#${hand1}/${hand2}` : hand1 ? `#${hand1}` : '';
+  history.replaceState(null, '', h || location.pathname);
+}
+
+function loadFromHash() {
+  const hash = location.hash.replace('#', '');
+  if (!hash) return;
+  const parts = hash.split('/');
+  const h1 = parts[0] ? parts[0].toUpperCase() : null;
+  const h2 = parts[1] ? parts[1].toUpperCase() : null;
+  // Validate against known hands
+  if (h1 && HAND_ORDER.includes(h1)) hand1 = h1;
+  if (h2 && HAND_ORDER.includes(h2)) hand2 = h2;
+  selectingHand = hand1 && !hand2 ? 2 : 1;
+}
+
+window.addEventListener('hashchange', () => {
+  hand1 = null; hand2 = null; lockedHand = null; selectingHand = 1;
+  loadFromHash();
+  renderGrid();
+  updateToggleButtons();
+  if (hand1 && hand2 && hand1 !== hand2) fetchAndShowEquity();
+  else { document.getElementById('matchupPlaceholder').style.display = ''; document.getElementById('matchupContent').style.display = 'none'; }
+});
+
+function renderGrid() {
+  // Reset all cells
+  for (let row = 0; row < 13; row++) {
+    for (let col = 0; col < 13; col++) {
+      const name = cellName(row, col);
+      const cell = document.getElementById('cell-' + name);
+      if (!cell) continue;
+      let base = row === col ? 'cell-pair' : row < col ? 'cell-suited' : 'cell-offsuit';
+      if (name === hand1) base += ' cell-sel1';
+      else if (name === hand2) base += ' cell-sel2';
+      cell.className = 'grid-cell ' + base;
+    }
+  }
+}
+
+// Card rendering
+const SUIT_MAP = { h: { sym: '♥', cls: 'red' }, d: { sym: '♦', cls: 'red' }, c: { sym: '♣', cls: 'black' }, s: { sym: '♠', cls: 'black' } };
+
+function renderCard(token) {
+  // token like "Ah", "Kd", "Ts"
+  const rankChar = token[0];
+  const suitChar = token[1];
+  const rank = rankChar === 'T' ? '10' : rankChar;
+  const suit = SUIT_MAP[suitChar] || { sym: suitChar, cls: 'black' };
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `
+    <span class="rank ${suit.cls}">${rank}</span>
+    <span class="suit-sym ${suit.cls}">${suit.sym}</span>`;
+  return div;
+}
+
+function parseCards(resolved) {
+  // "AhKh" → ["Ah","Kh"]
+  const tokens = [];
+  for (let i = 0; i < resolved.length; i += 2) {
+    tokens.push(resolved.slice(i, i + 2));
+  }
+  return tokens;
+}
+
+function showLoading() {
+  document.getElementById('matchupPlaceholder').style.display = 'none';
+  const content = document.getElementById('matchupContent');
+  content.style.display = 'block';
+  content.innerHTML = '<div class="loading">Loading equity data…</div>';
+}
+
+function showError(msg) {
+  document.getElementById('matchupPlaceholder').style.display = 'none';
+  const content = document.getElementById('matchupContent');
+  content.style.display = 'block';
+  content.innerHTML = `<div class="error-msg">${msg}</div>`;
+}
+
+function showMatchup(data, swapped) {
+  // If swapped, hand1 in UI is data.hand2 and vice versa
+  const uiHand1 = swapped ? data.hand2 : data.hand1;
+  const uiHand2 = swapped ? data.hand1 : data.hand2;
+  const uiResolved1 = swapped ? data.hand2_resolved : data.hand1_resolved;
+  const uiResolved2 = swapped ? data.hand1_resolved : data.hand2_resolved;
+  const wins1pct = swapped ? data.win_pct2 : data.win_pct1;
+  const wins2pct = swapped ? data.win_pct1 : data.win_pct2;
+  const tiePct = data.tie_pct;
+  const total = data.total.toLocaleString();
+
+  document.getElementById('matchupPlaceholder').style.display = 'none';
+  const content = document.getElementById('matchupContent');
+  content.style.display = 'block';
+
+  // Build cards row: [card][card] vs [card][card]
+  const cards1 = parseCards(uiResolved1);
+  const cards2 = parseCards(uiResolved2);
+
+  const row = document.createElement('div');
+  row.className = 'hands-row';
+
+  const cr1 = document.createElement('div');
+  cr1.className = 'cards-row';
+  cards1.forEach(c => cr1.appendChild(renderCard(c)));
+
+  const vsEl = document.createElement('div');
+  vsEl.className = 'vs-text';
+  vsEl.textContent = 'vs';
+
+  const cr2 = document.createElement('div');
+  cr2.className = 'cards-row';
+  cards2.forEach(c => cr2.appendChild(renderCard(c)));
+
+  row.appendChild(cr1);
+  row.appendChild(vsEl);
+  row.appendChild(cr2);
+
+  // Equity section
+  const eq = document.createElement('div');
+  eq.className = 'equity-section';
+
+  // Split bar
+  const barWrap = document.createElement('div');
+  barWrap.className = 'split-bar-wrap';
+  const bar = document.createElement('div');
+  bar.className = 'split-bar';
+
+  const bh1 = document.createElement('div');
+  bh1.className = 'bar-h1';
+  bh1.style.width = wins1pct + '%';
+
+  const bh2 = document.createElement('div');
+  bh2.className = 'bar-h2';
+  bh2.style.width = wins2pct + '%';
+
+  const bt = document.createElement('div');
+  bt.className = 'bar-tie';
+  bt.style.width = tiePct + '%';
+
+  bar.appendChild(bh1);
+  bar.appendChild(bh2);
+  bar.appendChild(bt);
+  barWrap.appendChild(bar);
+
+  // Labels
+  const labels = document.createElement('div');
+  labels.className = 'bar-labels';
+
+  const p1 = document.createElement('div');
+  p1.className = 'pct-h1';
+  p1.textContent = wins1pct.toFixed(2) + '%';
+
+  const p2 = document.createElement('div');
+  p2.className = 'pct-h2';
+  p2.textContent = wins2pct.toFixed(2) + '%';
+
+  labels.appendChild(p1);
+  labels.appendChild(p2);
+
+  const tiesLine = document.createElement('div');
+  tiesLine.className = 'ties-line';
+  tiesLine.textContent = `Ties: ${tiePct.toFixed(2)}%  ·  ${total} boards`;
+
+  eq.appendChild(barWrap);
+  eq.appendChild(labels);
+  eq.appendChild(tiesLine);
+
+  content.innerHTML = '';
+  content.appendChild(row);
+  content.appendChild(eq);
+}
+
+async function fetchAndShowEquity() {
+  const { file, swapped } = getFilenameInfo(hand1, hand2);
+  showLoading();
+  try {
+    const resp = await fetch(file);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    showMatchup(data, swapped);
+  } catch (e) {
+    showError(
+      `Could not load <code>${file}</code><br><br>` +
+      `Run <code>pocketduel --everything</code> to generate equity data,<br>` +
+      `then serve from project root: <code>python3 -m http.server 8080</code>`
+    );
+  }
+}
+
+// Init
+buildGrid();
+loadFromHash();
+updateToggleButtons();
+if (hand1 && hand2 && hand1 !== hand2) fetchAndShowEquity();
+else if (hand1 || hand2) renderGrid();
+</script>
+</body>
+</html>

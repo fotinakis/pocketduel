@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hand1": "T8o",
+  "hand2": "32o",
+  "hand1_resolved": "Th8d",
+  "hand2_resolved": "3h2d",
+  "wins1": 1133776,
+  "wins2": 543029,
+  "ties": 35499,
+  "total": 1712304,
+  "win_pct1": 66.21,
+  "win_pct2": 31.71,
+  "tie_pct": 2.07
+}
