@@ -84,8 +84,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-bottom: 18px;
+    gap: 10px;
+    margin-bottom: 28px;
     flex-wrap: wrap;
   }
 
@@ -399,6 +399,17 @@
     pointer-events: none;
   }
 
+  /* ── Hand-group color underlines ── */
+  #handGroup1 {
+    border-bottom: 3px solid var(--hand1);
+    padding-bottom: 6px;
+  }
+
+  #handGroup2 {
+    border-bottom: 3px solid var(--hand2);
+    padding-bottom: 6px;
+  }
+
   /* ── Mobile layout ── */
   @media (max-width: 767px) {
     body { overflow: hidden; }
@@ -417,7 +428,6 @@
     }
 
     .matchup-scroll {
-      justify-content: flex-start;
       padding: 14px 10px 10px;
     }
   }
