@@ -497,13 +497,6 @@
   }
 
   /* ── Monte Carlo info ── */
-  .mc-info {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    position: relative;
-  }
-
   .mc-trigger {
     font-size: 11px;
     color: var(--muted);
@@ -517,10 +510,15 @@
     color: var(--text);
   }
 
+  .splits-line {
+    position: relative;
+  }
+
   .mc-popover {
     position: absolute;
     bottom: calc(100% + 8px);
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     background: var(--surface2);
     border: 1px solid #3a3a6a;
     border-radius: 6px;
@@ -1130,9 +1128,6 @@ function setEquityDisabled(msg) {
 
   const tie = document.getElementById('barTie');
   if (tie) tie.style.width = '100%';
-
-  const mcInfo = document.getElementById('mcInfo');
-  if (mcInfo) mcInfo.style.display = 'none';
 }
 
 function setEquity2Way(stage, pct1, pct2, tiePct, total) {
@@ -1147,15 +1142,14 @@ function setEquity2Way(stage, pct1, pct2, tiePct, total) {
   flashUpdate('pctLabel0', pct1.toFixed(2) + '%');
   flashUpdate('pctLabel1', pct2.toFixed(2) + '%');
 
-  const splitsEl = document.getElementById('splitsLine');
+  const splitsPrefix = document.getElementById('splitsPrefix');
   if (activeBoardCards().length === 5) {
-    splitsEl.textContent = 'Final board';
+    splitsPrefix.textContent = 'Final board';
   } else {
-    splitsEl.textContent = `Split: ${tiePct.toFixed(2)}% \u00b7 ${total.toLocaleString()} possible boards`;
+    splitsPrefix.textContent = `Split: ${tiePct.toFixed(2)}% \u00b7 ${total.toLocaleString()} possible boards`;
   }
-
-  const mcInfo = document.getElementById('mcInfo');
-  if (mcInfo) mcInfo.style.display = 'none';
+  const mcTrigger2w = document.getElementById('mcTrigger');
+  if (mcTrigger2w) mcTrigger2w.style.display = 'none';
 }
 
 function setEquityNWay(stage, equities, splitPct, total, margin, isExact, done) {
@@ -1176,27 +1170,21 @@ function setEquityNWay(stage, equities, splitPct, total, margin, isExact, done) 
   }
 
   // Splits line
-  const splitsEl = document.getElementById('splitsLine');
+  const splitsPrefix = document.getElementById('splitsPrefix');
+  const mcTrigger = document.getElementById('mcTrigger');
   if (isExact) {
     if (activeBoardCards().length === 5) {
-      splitsEl.textContent = 'Final board';
+      splitsPrefix.textContent = 'Final board';
     } else {
-      splitsEl.textContent = `Split: ${splitPct.toFixed(1)}% \u00b7 ${total.toLocaleString()} possible boards`;
+      splitsPrefix.textContent = `Split: ${splitPct.toFixed(1)}% \u00b7 ${total.toLocaleString()} possible boards`;
     }
+    if (mcTrigger) mcTrigger.style.display = 'none';
   } else {
     const progress = done ? '' : '\u2026';
-    splitsEl.textContent = `${total.toLocaleString()} samples${progress} \u00b7 \u00b1${margin.toFixed(2)}%`;
-  }
-
-  // MC info: update trigger text and show/hide
-  const mcInfo = document.getElementById('mcInfo');
-  if (mcInfo) {
-    if (isExact) {
-      mcInfo.style.display = 'none';
-    } else {
-      const mcTrigger = document.getElementById('mcTrigger');
-      if (mcTrigger) mcTrigger.textContent = '\u00b1' + margin.toFixed(2) + '%';
-      mcInfo.style.display = '';
+    splitsPrefix.textContent = `${total.toLocaleString()} samples${progress} \u00b7 `;
+    if (mcTrigger) {
+      mcTrigger.textContent = '\u00b1' + margin.toFixed(2) + '%';
+      mcTrigger.style.display = '';
     }
   }
 }
@@ -1359,25 +1347,6 @@ function buildEquityBar() {
   stageLabel.id = 'equityStageLabel';
   stageLabel.textContent = 'Select hole cards to see equity';
   header.appendChild(stageLabel);
-
-  const mcInfo = document.createElement('div');
-  mcInfo.className = 'mc-info';
-  mcInfo.id = 'mcInfo';
-  mcInfo.style.display = 'none';
-
-  const mcTrigger = document.createElement('span');
-  mcTrigger.className = 'mc-trigger';
-  mcTrigger.id = 'mcTrigger';
-  mcInfo.appendChild(mcTrigger);
-
-  const mcPopover = document.createElement('div');
-  mcPopover.className = 'mc-popover';
-  mcPopover.id = 'mcPopover';
-  mcPopover.style.display = 'none'; // manage via inline style so toggle works
-  mcPopover.textContent = 'Equity estimated via Monte Carlo simulation (50,000 random boards). Results are approximate \u2014 see margin of error. Heads-up (2-player) matchups always use exact calculation.';
-  mcInfo.appendChild(mcPopover);
-
-  header.appendChild(mcInfo);
   bar.appendChild(header);
 
   // Equity section
@@ -1428,15 +1397,31 @@ function buildEquityBar() {
 
   section.appendChild(labels);
 
-  // Splits line
+  // Splits line: text prefix + optional MC trigger + popover
   const splitsLine = document.createElement('div');
   splitsLine.className = 'splits-line';
   splitsLine.id = 'splitsLine';
-  section.appendChild(splitsLine);
 
+  const splitsPrefix = document.createElement('span');
+  splitsPrefix.id = 'splitsPrefix';
+  splitsLine.appendChild(splitsPrefix);
+
+  const mcTrigger = document.createElement('span');
+  mcTrigger.className = 'mc-trigger';
+  mcTrigger.id = 'mcTrigger';
+  mcTrigger.style.display = 'none';
+  splitsLine.appendChild(mcTrigger);
+
+  const mcPopover = document.createElement('div');
+  mcPopover.className = 'mc-popover';
+  mcPopover.id = 'mcPopover';
+  mcPopover.style.display = 'none';
+  mcPopover.textContent = 'Equity estimated via Monte Carlo simulation (100,000 random boards). Results are approximate \u2014 see margin of error. Heads-up (2-player) matchups always use exact calculation.';
+  splitsLine.appendChild(mcPopover);
+
+  section.appendChild(splitsLine);
   bar.appendChild(section);
 
-  // Toggle popover on click of the ±X.XX% trigger text
   mcTrigger.addEventListener('click', function(e) {
     e.stopPropagation();
     mcPopover.style.display = mcPopover.style.display === 'none' ? 'block' : 'none';
