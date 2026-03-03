@@ -652,6 +652,51 @@
       padding: 0 3px;
     }
   }
+
+  /* ── Mobile multi-way: auto-shrink cards so all hands fit without scrolling ──
+     Card height = (available dvh − overhead) ÷ players
+     Overhead accounts for: picker, equity bar, padding, vs-text rows, add-btn  */
+
+  @media (max-width: 767px) {
+
+    /* 3-way */
+    .hands-display[data-players="3"] {
+      gap: 2px;
+      margin-bottom: 14px;
+    }
+    .hands-display[data-players="3"] [data-hand] { padding-bottom: 4px; }
+    .hands-display[data-players="3"] .vs-text    { font-size: 13px; padding: 1px 4px; }
+
+    .hands-display[data-players="3"] .hole-slot {
+      height: clamp(44px, calc((100dvh - 370px) / 3.5), 72px);
+      width: auto;
+      aspect-ratio: 5/7;
+    }
+    .hands-display[data-players="3"] .card .rank,
+    .hands-display[data-players="3"] .card .suit-sym {
+      font-size: clamp(12px, 4.5vmin, 24px);
+    }
+
+    /* 4-way */
+    .hands-display[data-players="4"] {
+      gap: 2px;
+      margin-bottom: 12px;
+    }
+    .hands-display[data-players="4"] [data-hand]     { padding-bottom: 3px; }
+    .hands-display[data-players="4"] .vs-text        { font-size: 12px; padding: 0 3px; }
+    .hands-display[data-players="4"] .add-player-btn { width: 24px; height: 24px; font-size: 14px; }
+
+    .hands-display[data-players="4"] .hole-slot {
+      height: clamp(38px, calc((100dvh - 420px) / 5), 60px);
+      width: auto;
+      aspect-ratio: 5/7;
+    }
+    .hands-display[data-players="4"] .card { padding: 2px 3px; }
+    .hands-display[data-players="4"] .card .rank,
+    .hands-display[data-players="4"] .card .suit-sym {
+      font-size: clamp(10px, 3.5vmin, 20px);
+    }
+  }
 </style>
 </head>
 <body>
@@ -831,6 +876,7 @@ function buildHandsDisplay() {
   const container = document.getElementById('handsDisplay');
   container.innerHTML = '';
   container.className = 'hands-display' + (numPlayers > 2 ? ' multi-way' : '');
+  container.dataset.players = String(numPlayers);
 
   for (let p = 0; p < numPlayers; p++) {
     if (p > 0) {
