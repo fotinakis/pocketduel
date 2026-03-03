@@ -721,7 +721,7 @@
 </div>
 
 <script src="postflop.js"></script>
-<script src="montecarlo.js"></script>
+<script src="montecarlo.js?v=2"></script>
 <script>
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -1139,8 +1139,8 @@ function setEquity2Way(stage, pct1, pct2, tiePct, total) {
   document.getElementById('barSeg1').style.width = pct2 + '%';
   document.getElementById('barTie').style.width = tiePct + '%';
 
-  flashUpdate('pctLabel0', pct1.toFixed(2) + '%');
-  flashUpdate('pctLabel1', pct2.toFixed(2) + '%');
+  flashUpdate('pctLabel0', (pct1 + tiePct / 2).toFixed(2) + '%');
+  flashUpdate('pctLabel1', (pct2 + tiePct / 2).toFixed(2) + '%');
 
   const splitsPrefix = document.getElementById('splitsPrefix');
   if (activeBoardCards().length === 5) {
