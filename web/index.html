@@ -122,12 +122,39 @@
 
   .matchup-section {
     flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid #2a2a4a;
+    overflow: hidden;
+  }
+
+  .matchup-scroll {
+    flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
     padding: 8px 12px;
+  }
+
+  .equity-bar {
+    flex-shrink: 0;
+    padding: 10px 12px;
     border-top: 1px solid #2a2a4a;
+    background: var(--surface);
+  }
+
+  .equity-bar:empty {
+    display: none;
+  }
+
+  .equity-bar .stage-label {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
   }
 
   /* ── Range grid ── */
@@ -307,8 +334,10 @@
     .matchup-section {
       flex: 0 0 58%;
       border-top: none;
+    }
+
+    .matchup-scroll {
       padding: 20px 28px;
-      justify-content: center;
     }
 
     .range-grid {
@@ -455,10 +484,6 @@
     outline-offset: -1px;
   }
 
-  .postflop-equity {
-    margin-top: 14px;
-  }
-
   .postflop-hint {
     text-align: center;
     color: var(--muted);
@@ -488,12 +513,15 @@
 
 <!-- Matchup section -->
 <div class="matchup-section" id="matchupSection">
-  <div class="matchup-placeholder" id="matchupPlaceholder">
-    <div class="arrow">♠♥♦♣</div>
-    <div>Select two hands from the grid</div>
-    <div style="font-size:11px;margin-top:6px;color:var(--muted)">Click a cell to pick Hand 1, then another for Hand 2</div>
+  <div class="matchup-scroll" id="matchupScroll">
+    <div class="matchup-placeholder" id="matchupPlaceholder">
+      <div class="arrow">♠♥♦♣</div>
+      <div>Select two hands from the grid</div>
+      <div style="font-size:11px;margin-top:6px;color:var(--muted)">Click a cell to pick Hand 1, then another for Hand 2</div>
+    </div>
+    <div id="matchupContent" style="display:none"></div>
   </div>
-  <div id="matchupContent" style="display:none"></div>
+  <div class="equity-bar" id="equityBar"></div>
 </div>
 
 <script src="postflop.js"></script>
@@ -665,11 +693,16 @@ function loadFromHash() {
 
 window.addEventListener('hashchange', () => {
   hand1 = null; hand2 = null; lockedHand = null; selectingHand = 1;
+  resolvedHand1 = null; resolvedHand2 = null; boardCards = []; preflopEquity = null;
   loadFromHash();
   renderGrid();
   updateToggleButtons();
   if (hand1 && hand2 && hand1 !== hand2) fetchAndShowEquity();
-  else { document.getElementById('matchupPlaceholder').style.display = ''; document.getElementById('matchupContent').style.display = 'none'; }
+  else {
+    document.getElementById('matchupPlaceholder').style.display = '';
+    document.getElementById('matchupContent').style.display = 'none';
+    updateEquityBar();
+  }
 });
 
 function renderGrid() {
@@ -728,15 +761,8 @@ function showError(msg) {
 }
 
 function showMatchup(data, swapped) {
-  // If swapped, hand1 in UI is data.hand2 and vice versa
-  const uiHand1 = swapped ? data.hand2 : data.hand1;
-  const uiHand2 = swapped ? data.hand1 : data.hand2;
   const uiResolved1 = swapped ? data.hand2_resolved : data.hand1_resolved;
   const uiResolved2 = swapped ? data.hand1_resolved : data.hand2_resolved;
-  const wins1pct = swapped ? data.win_pct2 : data.win_pct1;
-  const wins2pct = swapped ? data.win_pct1 : data.win_pct2;
-  const tiePct = data.tie_pct;
-  const total = data.total.toLocaleString();
 
   document.getElementById('matchupPlaceholder').style.display = 'none';
   const content = document.getElementById('matchupContent');
@@ -765,59 +791,8 @@ function showMatchup(data, swapped) {
   row.appendChild(vsEl);
   row.appendChild(cr2);
 
-  // Equity section
-  const eq = document.createElement('div');
-  eq.className = 'equity-section';
-
-  // Split bar
-  const barWrap = document.createElement('div');
-  barWrap.className = 'split-bar-wrap';
-  const bar = document.createElement('div');
-  bar.className = 'split-bar';
-
-  const bh1 = document.createElement('div');
-  bh1.className = 'bar-h1';
-  bh1.style.width = wins1pct + '%';
-
-  const bh2 = document.createElement('div');
-  bh2.className = 'bar-h2';
-  bh2.style.width = wins2pct + '%';
-
-  const bt = document.createElement('div');
-  bt.className = 'bar-tie';
-  bt.style.width = tiePct + '%';
-
-  bar.appendChild(bh1);
-  bar.appendChild(bh2);
-  bar.appendChild(bt);
-  barWrap.appendChild(bar);
-
-  // Labels
-  const labels = document.createElement('div');
-  labels.className = 'bar-labels';
-
-  const p1 = document.createElement('div');
-  p1.className = 'pct-h1';
-  p1.textContent = wins1pct.toFixed(2) + '%';
-
-  const p2 = document.createElement('div');
-  p2.className = 'pct-h2';
-  p2.textContent = wins2pct.toFixed(2) + '%';
-
-  labels.appendChild(p1);
-  labels.appendChild(p2);
-
-  const tiesLine = document.createElement('div');
-  tiesLine.className = 'ties-line';
-  tiesLine.textContent = `Ties: ${tiePct.toFixed(2)}%  ·  ${total} boards`;
-
-  eq.appendChild(barWrap);
-  eq.appendChild(labels);
-  eq.appendChild(tiesLine);
-
   content.innerHTML = '';
   content.appendChild(row);
-  content.appendChild(eq);
 }
 
 // ── Postflop state & UI ─────────────────────────────────────────────────────
@@ -825,6 +800,7 @@ function showMatchup(data, swapped) {
 let boardCards = [];      // e.g. ["Ah", "Kd", "5c"]
 let resolvedHand1 = null; // e.g. ["Ah", "Kd"]
 let resolvedHand2 = null; // e.g. ["Qc", "Jh"]
+let preflopEquity = null; // { pct1, pct2, tiePct, total }
 
 const PICKER_RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
 const PICKER_SUITS = [
@@ -877,7 +853,7 @@ function showPostflopSection() {
       slot.classList.add('filled');
       slot.innerHTML = '';
       slot.appendChild(renderCard(boardCards[i]));
-      slot.onclick = () => { boardCards.splice(i); renderPostflop(); };
+      slot.onclick = () => { boardCards.splice(i, 1); renderPostflop(); };
     } else {
       slot.textContent = '+';
     }
@@ -901,7 +877,7 @@ function showPostflopSection() {
         cell.classList.add('picker-selected');
         cell.onclick = () => {
           const idx = boardCards.indexOf(cardStr);
-          boardCards.splice(idx);
+          boardCards.splice(idx, 1);
           renderPostflop();
         };
       } else {
@@ -917,84 +893,59 @@ function showPostflopSection() {
   }
   section.appendChild(grid);
 
-  // Postflop equity area
-  const eqArea = document.createElement('div');
-  eqArea.className = 'postflop-equity';
-  eqArea.id = 'postflopEquity';
-  section.appendChild(eqArea);
-
   content.appendChild(section);
-
-  // Calculate and show equity if we have >= 3 board cards
-  updatePostflopEquity();
 }
 
-function updatePostflopEquity() {
-  const eqArea = document.getElementById('postflopEquity');
-  if (!eqArea) return;
+function updateEquityBar() {
+  const bar = document.getElementById('equityBar');
 
-  if (boardCards.length < 3) {
-    const remaining = 3 - boardCards.length;
-    eqArea.innerHTML = `<div class="postflop-hint">Select ${remaining} more card${remaining > 1 ? 's' : ''} for the flop to calculate post-flop equity</div>`;
+  if (!resolvedHand1 || !resolvedHand2) {
+    bar.innerHTML = '';
     return;
   }
 
-  const result = Postflop.calculateEquity(resolvedHand1, resolvedHand2, boardCards);
-  if (!result) {
-    eqArea.innerHTML = `<div class="postflop-hint">Too many unknown cards for browser calculation</div>`;
-    return;
+  let pct1, pct2, tiePct, totalBoards, stageLabel;
+
+  if (boardCards.length === 0) {
+    if (!preflopEquity) { bar.innerHTML = ''; return; }
+    pct1 = preflopEquity.pct1;
+    pct2 = preflopEquity.pct2;
+    tiePct = preflopEquity.tiePct;
+    totalBoards = preflopEquity.total;
+    stageLabel = 'Pre-flop';
+  } else {
+    const result = Postflop.calculateEquity(resolvedHand1, resolvedHand2, boardCards);
+    if (!result) { bar.innerHTML = ''; return; }
+    pct1 = result.pct1;
+    pct2 = result.pct2;
+    tiePct = result.tiePct;
+    totalBoards = result.total;
+    const labels = { 1: '1 Card', 2: '2 Cards', 3: 'Flop', 4: 'Turn', 5: 'River' };
+    stageLabel = labels[boardCards.length];
   }
 
-  const stageLabel = boardCards.length === 3 ? 'Flop' : boardCards.length === 4 ? 'Turn' : 'River';
-
-  eqArea.innerHTML = '';
-
-  const eq = document.createElement('div');
-  eq.className = 'equity-section';
-
-  const barWrap = document.createElement('div');
-  barWrap.className = 'split-bar-wrap';
-  const bar = document.createElement('div');
-  bar.className = 'split-bar';
-
-  const bh1 = document.createElement('div');
-  bh1.className = 'bar-h1';
-  bh1.style.width = result.pct1 + '%';
-  const bh2 = document.createElement('div');
-  bh2.className = 'bar-h2';
-  bh2.style.width = result.pct2 + '%';
-  const bt = document.createElement('div');
-  bt.className = 'bar-tie';
-  bt.style.width = result.tiePct + '%';
-
-  bar.appendChild(bh1);
-  bar.appendChild(bh2);
-  bar.appendChild(bt);
-  barWrap.appendChild(bar);
-
-  const labels = document.createElement('div');
-  labels.className = 'bar-labels';
-  const p1 = document.createElement('div');
-  p1.className = 'pct-h1';
-  p1.textContent = result.pct1.toFixed(2) + '%';
-  const p2 = document.createElement('div');
-  p2.className = 'pct-h2';
-  p2.textContent = result.pct2.toFixed(2) + '%';
-  labels.appendChild(p1);
-  labels.appendChild(p2);
-
-  const tiesLine = document.createElement('div');
-  tiesLine.className = 'ties-line';
-  tiesLine.textContent = `${stageLabel} Equity \u00b7 Ties: ${result.tiePct.toFixed(2)}% \u00b7 ${result.total.toLocaleString()} board${result.total !== 1 ? 's' : ''}`;
-
-  eq.appendChild(barWrap);
-  eq.appendChild(labels);
-  eq.appendChild(tiesLine);
-  eqArea.appendChild(eq);
+  bar.innerHTML = `
+    <div class="stage-label">${stageLabel}</div>
+    <div class="equity-section">
+      <div class="split-bar-wrap">
+        <div class="split-bar">
+          <div class="bar-h1" style="width:${pct1}%"></div>
+          <div class="bar-h2" style="width:${pct2}%"></div>
+          <div class="bar-tie" style="width:${tiePct}%"></div>
+        </div>
+      </div>
+      <div class="bar-labels">
+        <div class="pct-h1">${pct1.toFixed(2)}%</div>
+        <div class="pct-h2">${pct2.toFixed(2)}%</div>
+      </div>
+      <div class="ties-line">Ties: ${tiePct.toFixed(2)}%  \u00b7  ${totalBoards.toLocaleString()} board${totalBoards !== 1 ? 's' : ''}</div>
+    </div>
+  `;
 }
 
 function renderPostflop() {
   showPostflopSection();
+  updateEquityBar();
 }
 
 async function fetchAndShowEquity() {
@@ -1006,15 +957,24 @@ async function fetchAndShowEquity() {
     const data = await resp.json();
     showMatchup(data, swapped);
 
-    // Store resolved hole cards and show postflop section
+    // Store resolved hole cards
     const r1 = swapped ? data.hand2_resolved : data.hand1_resolved;
     const r2 = swapped ? data.hand1_resolved : data.hand2_resolved;
     resolvedHand1 = parseCards(r1);
     resolvedHand2 = parseCards(r2);
+
+    // Store pre-flop equity for the equity bar
+    const wins1pct = swapped ? data.win_pct2 : data.win_pct1;
+    const wins2pct = swapped ? data.win_pct1 : data.win_pct2;
+    preflopEquity = { pct1: wins1pct, pct2: wins2pct, tiePct: data.tie_pct, total: data.total };
+
     boardCards = [];
     showPostflopSection();
+    updateEquityBar();
   } catch (e) {
+    resolvedHand1 = null; resolvedHand2 = null; preflopEquity = null;
     showError(`Could not load equity data.`);
+    updateEquityBar();
   }
 }
 
