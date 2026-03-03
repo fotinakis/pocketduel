@@ -504,19 +504,16 @@
     position: relative;
   }
 
-  .mc-margin {
+  .mc-trigger {
     font-size: 11px;
-    color: var(--muted);
-  }
-
-  .mc-icon {
-    font-size: 13px;
     color: var(--muted);
     cursor: pointer;
     user-select: none;
+    text-decoration: underline dashed;
+    text-underline-offset: 3px;
   }
 
-  .mc-icon:hover {
+  .mc-trigger:hover {
     color: var(--text);
   }
 
@@ -650,6 +647,51 @@
     .hands-display.multi-way .vs-text {
       font-size: clamp(16px, 2.5vw, 24px);
       padding: 0 3px;
+    }
+  }
+
+  /* ── Mobile multi-way: auto-shrink cards so all hands fit without scrolling ──
+     Card height = (available dvh − overhead) ÷ players
+     Overhead accounts for: picker, equity bar, padding, vs-text rows, add-btn  */
+
+  @media (max-width: 767px) {
+
+    /* 3-way */
+    .hands-display[data-players="3"] {
+      gap: 2px;
+      margin-bottom: 14px;
+    }
+    .hands-display[data-players="3"] [data-hand] { padding-bottom: 4px; }
+    .hands-display[data-players="3"] .vs-text    { font-size: 13px; padding: 1px 4px; }
+
+    .hands-display[data-players="3"] .hole-slot {
+      height: clamp(44px, calc((100dvh - 370px) / 3.5), 72px);
+      width: auto;
+      aspect-ratio: 5/7;
+    }
+    .hands-display[data-players="3"] .card .rank,
+    .hands-display[data-players="3"] .card .suit-sym {
+      font-size: clamp(12px, 4.5vmin, 24px);
+    }
+
+    /* 4-way */
+    .hands-display[data-players="4"] {
+      gap: 2px;
+      margin-bottom: 12px;
+    }
+    .hands-display[data-players="4"] [data-hand]     { padding-bottom: 3px; }
+    .hands-display[data-players="4"] .vs-text        { font-size: 12px; padding: 0 3px; }
+    .hands-display[data-players="4"] .add-player-btn { width: 24px; height: 24px; font-size: 14px; }
+
+    .hands-display[data-players="4"] .hole-slot {
+      height: clamp(38px, calc((100dvh - 420px) / 5), 60px);
+      width: auto;
+      aspect-ratio: 5/7;
+    }
+    .hands-display[data-players="4"] .card { padding: 2px 3px; }
+    .hands-display[data-players="4"] .card .rank,
+    .hands-display[data-players="4"] .card .suit-sym {
+      font-size: clamp(10px, 3.5vmin, 20px);
     }
   }
 </style>
@@ -831,6 +873,7 @@ function buildHandsDisplay() {
   const container = document.getElementById('handsDisplay');
   container.innerHTML = '';
   container.className = 'hands-display' + (numPlayers > 2 ? ' multi-way' : '');
+  container.dataset.players = String(numPlayers);
 
   for (let p = 0; p < numPlayers; p++) {
     if (p > 0) {
@@ -1145,10 +1188,16 @@ function setEquityNWay(stage, equities, splitPct, total, margin, isExact, done) 
     splitsEl.textContent = `${total.toLocaleString()} samples${progress} \u00b7 \u00b1${margin.toFixed(2)}%`;
   }
 
-  // MC info
+  // MC info: update trigger text and show/hide
   const mcInfo = document.getElementById('mcInfo');
   if (mcInfo) {
-    mcInfo.style.display = isExact ? 'none' : '';
+    if (isExact) {
+      mcInfo.style.display = 'none';
+    } else {
+      const mcTrigger = document.getElementById('mcTrigger');
+      if (mcTrigger) mcTrigger.textContent = '\u00b1' + margin.toFixed(2) + '%';
+      mcInfo.style.display = '';
+    }
   }
 }
 
@@ -1316,21 +1365,15 @@ function buildEquityBar() {
   mcInfo.id = 'mcInfo';
   mcInfo.style.display = 'none';
 
-  const mcMargin = document.createElement('span');
-  mcMargin.className = 'mc-margin';
-  mcMargin.id = 'mcMargin';
-  mcInfo.appendChild(mcMargin);
-
-  const mcIcon = document.createElement('span');
-  mcIcon.className = 'mc-icon';
-  mcIcon.id = 'mcIcon';
-  mcIcon.textContent = '\u24d8';
-  mcIcon.title = 'Monte Carlo estimation';
-  mcInfo.appendChild(mcIcon);
+  const mcTrigger = document.createElement('span');
+  mcTrigger.className = 'mc-trigger';
+  mcTrigger.id = 'mcTrigger';
+  mcInfo.appendChild(mcTrigger);
 
   const mcPopover = document.createElement('div');
   mcPopover.className = 'mc-popover';
   mcPopover.id = 'mcPopover';
+  mcPopover.style.display = 'none'; // manage via inline style so toggle works
   mcPopover.textContent = 'Equity estimated via Monte Carlo simulation (50,000 random boards). Results are approximate \u2014 see margin of error. Heads-up (2-player) matchups always use exact calculation.';
   mcInfo.appendChild(mcPopover);
 
@@ -1393,10 +1436,10 @@ function buildEquityBar() {
 
   bar.appendChild(section);
 
-  // Set up MC popover toggle
-  mcIcon.addEventListener('click', function(e) {
+  // Toggle popover on click of the ±X.XX% trigger text
+  mcTrigger.addEventListener('click', function(e) {
     e.stopPropagation();
-    mcPopover.style.display = mcPopover.style.display === 'none' ? '' : 'none';
+    mcPopover.style.display = mcPopover.style.display === 'none' ? 'block' : 'none';
   });
 }
 
