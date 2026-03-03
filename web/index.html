@@ -19,6 +19,8 @@
     --card-bg:   #f0ede8;
     --card-text: #111111;
     --active:    #fbbf24;
+    --empty-border: #6060a8;
+    --empty-color:  #7070b8;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -45,7 +47,7 @@
     flex-direction: column;
     flex-shrink: 0;
     padding: 6px 5px 8px;
-    border-top: 1px solid #2a2a4a;
+    border-top: 3px solid #4a4a8a;
   }
 
   .picker-section-label {
@@ -56,7 +58,7 @@
     color: var(--muted);
     margin-bottom: 5px;
     flex-shrink: 0;
-    display: none; /* hidden on mobile */
+    display: none;
   }
 
   /* ── Main section ── */
@@ -74,7 +76,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 14px 12px 10px;
+    padding: 16px 12px 10px;
   }
 
   /* ── Hands display ── */
@@ -82,63 +84,55 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 8px;
+    margin-bottom: 18px;
     flex-wrap: wrap;
   }
 
   .hand-group {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
   }
-
-  .hand-label {
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--muted);
-  }
-
-  .hand-label.label-h1 { color: var(--hand1); }
-  .hand-label.label-h2 { color: var(--hand2); }
 
   .hole-cards-row {
     display: flex;
-    gap: 5px;
+    gap: 6px;
   }
 
   .vs-text {
-    color: var(--muted);
-    font-size: 14px;
-    font-weight: 600;
-    align-self: flex-end;
-    padding: 0 2px;
-    margin-bottom: 6px;
+    font-size: clamp(20px, 5.5vmin, 30px);
+    font-weight: 900;
+    color: var(--text);
+    align-self: center;
+    padding: 0 6px;
+    letter-spacing: -0.03em;
+    opacity: 0.55;
   }
 
   /* ── Card slots ── */
   .hole-slot {
-    width: clamp(40px, 11vmin, 58px);
-    height: clamp(56px, 15vmin, 82px);
-    border: 2px dashed #3a3a5a;
-    border-radius: 5px;
+    width: clamp(44px, 13vmin, 64px);
+    height: clamp(62px, 18vmin, 90px);
+    border: 2px dashed var(--empty-border);
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #3a3a5a;
-    font-size: 16px;
-    cursor: default;
+    color: var(--empty-color);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
     flex-shrink: 0;
-    transition: border-color 0.15s, box-shadow 0.15s, outline 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
     position: relative;
   }
 
+  /* Subtle color hint: left pair = hand1, right pair = hand2 */
+  #handGroup1 .hole-slot { border-color: #3a5888; color: #5a78b8; }
+  #handGroup2 .hole-slot { border-color: #703820; color: #a05030; }
+
   .hole-slot.slot-active {
-    border: 2px solid var(--active) !important;
-    box-shadow: 0 0 8px rgba(251, 191, 36, 0.35);
+    border: 2.5px solid var(--active) !important;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.45), 0 0 20px rgba(251, 191, 36, 0.15);
     color: var(--active);
   }
 
@@ -146,6 +140,7 @@
     border: none;
     cursor: pointer;
     padding: 0;
+    color: inherit;
   }
 
   .hole-slot.filled:hover {
@@ -153,9 +148,10 @@
   }
 
   .hole-slot.filled.slot-active {
-    outline: 2px solid var(--active);
-    outline-offset: 2px;
+    outline: 2.5px solid var(--active);
+    outline-offset: 3px;
     border: none;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.45);
     cursor: pointer;
   }
 
@@ -163,34 +159,34 @@
     width: 100%;
     height: 100%;
     margin: 0;
-    border-radius: 5px;
+    border-radius: 6px;
   }
 
   /* Portrait playing card */
   .card {
     background: var(--card-bg);
     color: var(--card-text);
-    border-radius: 5px;
-    width: clamp(40px, 11vmin, 58px);
-    height: clamp(56px, 15vmin, 82px);
+    border-radius: 6px;
+    width: clamp(44px, 13vmin, 64px);
+    height: clamp(62px, 18vmin, 90px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 3px 4px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    padding: 3px 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.55);
     position: relative;
     flex-shrink: 0;
   }
 
   .card .rank {
-    font-size: clamp(16px, 5vmin, 26px);
+    font-size: clamp(18px, 5.5vmin, 28px);
     font-weight: 800;
     line-height: 1;
     align-self: flex-start;
   }
 
   .card .suit-sym {
-    font-size: clamp(16px, 5vmin, 26px);
+    font-size: clamp(18px, 5.5vmin, 28px);
     line-height: 1;
     align-self: flex-end;
   }
@@ -201,29 +197,33 @@
   /* ── Community cards section ── */
   .community-section {
     padding: 0 2px 10px;
+    display: flex;
+    justify-content: center;
   }
 
   .board-slots {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .board-slot-gap {
-    width: 10px;
+    width: 12px;
   }
 
   .board-slot {
-    width: clamp(34px, 9.5vmin, 52px);
-    height: clamp(48px, 13vmin, 72px);
-    border: 2px dashed #3a3a5a;
-    border-radius: 5px;
+    width: clamp(36px, 10.5vmin, 56px);
+    height: clamp(50px, 14.5vmin, 78px);
+    border: 2px dashed var(--empty-border);
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #3a3a5a;
-    font-size: 16px;
+    color: var(--empty-color);
+    font-size: 18px;
+    font-weight: 700;
     cursor: default;
     flex-shrink: 0;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -231,8 +231,8 @@
   }
 
   .board-slot.slot-active {
-    border: 2px solid var(--active) !important;
-    box-shadow: 0 0 8px rgba(251, 191, 36, 0.35);
+    border: 2.5px solid var(--active) !important;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.45), 0 0 20px rgba(251, 191, 36, 0.15);
     color: var(--active);
   }
 
@@ -240,6 +240,7 @@
     border: none;
     cursor: pointer;
     padding: 0;
+    color: inherit;
   }
 
   .board-slot.filled:hover {
@@ -247,9 +248,10 @@
   }
 
   .board-slot.filled.slot-active {
-    outline: 2px solid var(--active);
-    outline-offset: 2px;
+    outline: 2.5px solid var(--active);
+    outline-offset: 3px;
     border: none;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.45);
     cursor: pointer;
   }
 
@@ -257,65 +259,81 @@
     width: 100%;
     height: 100%;
     margin: 0;
-    border-radius: 5px;
+    border-radius: 6px;
   }
 
   .board-slot.slot-inactive {
-    opacity: 0.35;
+    opacity: 0.25;
     pointer-events: none;
   }
 
   /* ── Equity bar (always visible) ── */
   .equity-bar {
     flex-shrink: 0;
-    padding: 10px 12px;
-    border-top: 1px solid #2a2a4a;
+    padding: 10px 14px;
+    border-top: 2px solid #3a3a6a;
     background: var(--surface);
-    min-height: 42px;
+    min-height: 44px;
   }
 
   .equity-bar .stage-label {
     color: var(--muted);
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     margin-bottom: 6px;
+    transition: opacity 0.2s;
   }
 
   .equity-placeholder {
     text-align: center;
     color: var(--muted);
     font-size: 12px;
-    padding: 6px 0;
+    padding: 7px 0;
   }
 
   /* ── Equity bars ── */
   .equity-section { display: flex; flex-direction: column; gap: 10px; }
 
-  .split-bar-wrap { position: relative; height: 28px; border-radius: 6px; overflow: hidden; background: #2a2a4a; }
+  .split-bar-wrap {
+    position: relative; height: 30px; border-radius: 6px;
+    overflow: hidden; background: #2a2a4a;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+  }
 
   .split-bar { display: flex; height: 100%; }
 
-  .bar-h1  { background: var(--hand1); transition: width 0.4s ease; }
-  .bar-h2  { background: var(--hand2); transition: width 0.4s ease; }
-  .bar-tie { background: #44445a; transition: width 0.4s ease; }
+  .bar-h1  { background: var(--hand1); transition: width 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+  .bar-h2  { background: var(--hand2); transition: width 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+  .bar-tie { background: #44445a;      transition: width 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
 
   .bar-labels {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-top: 4px;
+    margin-top: 5px;
   }
 
-  .pct-h1 { color: var(--hand1); font-size: clamp(14px, 3vw, 22px); font-weight: 700; }
-  .pct-h2 { color: var(--hand2); font-size: clamp(14px, 3vw, 22px); font-weight: 700; text-align: right; }
+  .pct-h1 {
+    color: var(--hand1);
+    font-size: clamp(16px, 3.5vw, 24px);
+    font-weight: 700;
+    transition: opacity 0.2s;
+  }
+  .pct-h2 {
+    color: var(--hand2);
+    font-size: clamp(16px, 3.5vw, 24px);
+    font-weight: 700;
+    text-align: right;
+    transition: opacity 0.2s;
+  }
 
-  .ties-line {
+  .splits-line {
     text-align: center;
     color: var(--muted);
     font-size: 11px;
-    margin-top: 6px;
+    margin-top: 5px;
   }
 
   .loading {
@@ -353,11 +371,11 @@
     user-select: none;
     background: var(--surface2);
     border: 1px solid transparent;
-    transition: all 0.1s;
+    transition: filter 0.1s;
   }
 
-  .picker-cell:hover:not(.picker-disabled):not(.picker-used) {
-    filter: brightness(1.45);
+  .picker-cell:hover:not(.picker-disabled) {
+    filter: brightness(1.5);
   }
 
   .picker-rank {
@@ -372,24 +390,13 @@
   }
 
   .picker-cell.suit-red   { color: var(--red-suit); }
-  .picker-cell.suit-black { color: #b0b8c8; }
+  .picker-cell.suit-black { color: #c0c8d8; }
 
+  /* Used cards in picker: fully disabled — only the display area allows deselect */
   .picker-cell.picker-disabled {
-    opacity: 0.15;
-    cursor: not-allowed;
+    opacity: 0.16;
+    cursor: default;
     pointer-events: none;
-  }
-
-  .picker-cell.picker-used {
-    background: #2a1d60;
-    border: 1px solid #5a3fb0;
-    cursor: pointer;
-    opacity: 0.7;
-  }
-
-  .picker-cell.picker-used:hover {
-    opacity: 1;
-    filter: brightness(1.3);
   }
 
   /* ── Mobile layout ── */
@@ -401,7 +408,7 @@
       bottom: 0; left: 0; right: 0;
       z-index: 100;
       padding: 5px 4px calc(8px + env(safe-area-inset-bottom, 0px));
-      border-top: 2px solid #2a2a4a;
+      border-top: 3px solid #5555a0;
     }
 
     .main-section {
@@ -422,7 +429,7 @@
     .picker-section {
       flex: 0 0 36%;
       border-top: none;
-      border-right: 1px solid #2a2a4a;
+      border-right: 2px solid #3a3a6a;
       padding: 12px 10px;
       overflow-y: auto;
       justify-content: flex-start;
@@ -454,30 +461,26 @@
     }
 
     .matchup-scroll {
-      padding: 20px 24px 12px;
-    }
-
-    .hands-display {
-      gap: 14px;
+      padding: 20px 28px 12px;
     }
 
     .hole-slot {
-      width: clamp(44px, 7vw, 68px);
-      height: clamp(60px, 10vw, 96px);
+      width: clamp(48px, 7.5vw, 74px);
+      height: clamp(68px, 10.5vw, 104px);
     }
 
     .card {
-      width: clamp(44px, 7vw, 68px);
-      height: clamp(60px, 10vw, 96px);
+      width: clamp(48px, 7.5vw, 74px);
+      height: clamp(68px, 10.5vw, 104px);
     }
 
     .board-slot {
-      width: clamp(36px, 5.5vw, 56px);
-      height: clamp(50px, 8vw, 80px);
+      width: clamp(38px, 5.8vw, 60px);
+      height: clamp(54px, 8.2vw, 84px);
     }
 
     .equity-bar {
-      padding: 12px 24px;
+      padding: 12px 28px;
     }
   }
 </style>
@@ -496,8 +499,7 @@
 
     <!-- Hole cards display -->
     <div class="hands-display" id="handsDisplay">
-      <div class="hand-group">
-        <div class="hand-label label-h1">Hand 1</div>
+      <div class="hand-group" id="handGroup1">
         <div class="hole-cards-row">
           <div class="hole-slot slot-active" id="holeSlot0"></div>
           <div class="hole-slot" id="holeSlot1"></div>
@@ -506,8 +508,7 @@
 
       <div class="vs-text">vs</div>
 
-      <div class="hand-group">
-        <div class="hand-label label-h2">Hand 2</div>
+      <div class="hand-group" id="handGroup2">
         <div class="hole-cards-row">
           <div class="hole-slot" id="holeSlot2"></div>
           <div class="hole-slot" id="holeSlot3"></div>
@@ -522,10 +523,8 @@
 
   </div>
 
-  <!-- Equity bar: always visible -->
-  <div class="equity-bar" id="equityBar">
-    <div class="equity-placeholder">Select hole cards to see equity</div>
-  </div>
+  <!-- Equity bar: always visible, persistent structure built by JS -->
+  <div class="equity-bar" id="equityBar"></div>
 </div>
 
 <script src="postflop.js"></script>
@@ -548,7 +547,6 @@ const SUIT_MAP = {
   s: { sym: '♠', cls: 'black' },
 };
 
-// Hand type order for JSON file lookup (matches Rust generation order)
 function buildHandOrder() {
   const ranks = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
   const order = [];
@@ -566,10 +564,10 @@ const HAND_TYPE_ORDER = buildHandOrder();
 
 // ── State ───────────────────────────────────────────────────────────────────
 
-let holeCards  = [null, null, null, null]; // [h1c1, h1c2, h2c1, h2c2]
-let boardCards = [];                        // 0–5 community card strings
-let activeSlot = 0;                         // 0-3=hole, 4-8=board, null=all done
-let preflopEquity = null;                   // { pct1, pct2, tiePct, total }
+let holeCards  = [null, null, null, null];
+let boardCards = [];
+let activeSlot = 0;
+let preflopEquity = null;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -603,9 +601,7 @@ function parseCardPairs(str) {
   const cards = [];
   for (let i = 0; i + 1 < str.length; i += 2) {
     const c = str[i] + str[i + 1];
-    if ('AKQJT98765432'.includes(c[0]) && 'hdcs'.includes(c[1])) {
-      cards.push(c);
-    }
+    if ('AKQJT98765432'.includes(c[0]) && 'hdcs'.includes(c[1])) cards.push(c);
   }
   return cards;
 }
@@ -636,10 +632,10 @@ function setActiveSlot(i) {
 function clearHoleSlot(i) {
   holeCards[i] = null;
   activeSlot = i;
-  // Clearing a hole card invalidates equity and board
   preflopEquity = null;
   boardCards = [];
   renderAll();
+  hideEquityContent();
   updateEquityBar();
   pushHash();
 }
@@ -653,40 +649,14 @@ function clearBoardFrom(idx) {
   pushHash();
 }
 
-function clearBoard() {
-  boardCards = [];
-  activeSlot = 4;
-  renderSlots();
-  renderPickerGrid();
-  updateEquityBar();
-  pushHash();
-}
-
-// ── Picker click handler ──────────────────────────────────────────────────────
+// ── Picker click — NO deselect from picker; only display area allows clearing ──
 
 function onPickerClick(cardStr) {
-  // If card is already in a hole slot → clear that hole slot
-  const holeIdx = holeCards.indexOf(cardStr);
-  if (holeIdx !== -1) {
-    clearHoleSlot(holeIdx);
-    return;
-  }
-
-  // If card is in board → clear from that board index
-  const boardIdx = boardCards.indexOf(cardStr);
-  if (boardIdx !== -1) {
-    clearBoardFrom(boardIdx);
-    return;
-  }
-
-  // No active slot — all done
   if (activeSlot === null) return;
 
   if (activeSlot >= 0 && activeSlot <= 3) {
-    // Place into hole card slot
     holeCards[activeSlot] = cardStr;
 
-    // Find next empty hole slot
     let nextHole = null;
     for (let i = 0; i < 4; i++) {
       if (!holeCards[i]) { nextHole = i; break; }
@@ -695,9 +665,7 @@ function onPickerClick(cardStr) {
     if (nextHole !== null) {
       activeSlot = nextHole;
     } else {
-      // All hole cards filled → move to community phase
       activeSlot = 4 + boardCards.length;
-      // Trigger pre-flop equity fetch
       fetchPreflopEquity();
     }
 
@@ -705,14 +673,8 @@ function onPickerClick(cardStr) {
     pushHash();
 
   } else if (activeSlot >= 4 && activeSlot <= 8) {
-    // Place into community slot
     boardCards.push(cardStr);
-    if (boardCards.length < 5) {
-      activeSlot = 4 + boardCards.length;
-    } else {
-      activeSlot = null;
-    }
-
+    activeSlot = boardCards.length < 5 ? 4 + boardCards.length : null;
     renderSlots();
     renderPickerGrid();
     updateEquityBar();
@@ -740,76 +702,144 @@ async function fetchPreflopEquity() {
     preflopEquity = { pct1: p1, pct2: p2, tiePct: data.tie_pct, total: data.total };
     updateEquityBar();
   } catch (e) {
-    const ht1 = cardsToHandType(holeCards[0], holeCards[1]);
-    const ht2 = cardsToHandType(holeCards[2], holeCards[3]);
-    document.getElementById('equityBar').innerHTML =
-      `<div class="error-msg">Could not load equity for ${ht1} vs ${ht2}.</div>`;
+    const ht1b = cardsToHandType(holeCards[0], holeCards[1]);
+    const ht2b = cardsToHandType(holeCards[2], holeCards[3]);
+    const ph = document.getElementById('equityPlaceholder');
+    const ct = document.getElementById('equityContent');
+    if (ph && ct) {
+      hideEquityContent();
+      ph.textContent = `Could not load equity for ${ht1b} vs ${ht2b}.`;
+      ph.className = 'error-msg';
+      ph.style.display = '';
+    }
   }
 }
 
-// ── Equity bar ────────────────────────────────────────────────────────────────
+// ── Equity bar — persistent DOM for smooth animations ─────────────────────────
 
-function updateEquityBar() {
+function initEquityBarStructure() {
   const bar = document.getElementById('equityBar');
-
-  if (!handsComplete()) {
-    bar.innerHTML = `<div class="equity-placeholder">Select hole cards to see equity</div>`;
-    return;
-  }
-
-  if (boardCards.length === 0) {
-    if (!preflopEquity) {
-      bar.innerHTML = `<div class="loading">Loading equity…</div>`;
-      return;
-    }
-    const { pct1, pct2, tiePct, total } = preflopEquity;
-    bar.innerHTML = `
-      <div class="stage-label">Pre-flop</div>
+  bar.innerHTML = `
+    <div id="equityPlaceholder" class="equity-placeholder">Select hole cards to see equity</div>
+    <div id="equityContent" style="display:none">
+      <div class="stage-label" id="equityStageLabel"></div>
       <div class="equity-section">
         <div class="split-bar-wrap">
           <div class="split-bar">
-            <div class="bar-h1" style="width:${pct1}%"></div>
-            <div class="bar-h2" style="width:${pct2}%"></div>
-            <div class="bar-tie" style="width:${tiePct}%"></div>
+            <div class="bar-h1" id="barH1" style="width:0%"></div>
+            <div class="bar-h2" id="barH2" style="width:0%"></div>
+            <div class="bar-tie" id="barTie" style="width:0%"></div>
           </div>
         </div>
         <div class="bar-labels">
-          <div class="pct-h1">${pct1.toFixed(2)}%</div>
-          <div class="pct-h2">${pct2.toFixed(2)}%</div>
+          <div class="pct-h1" id="pctH1"></div>
+          <div class="pct-h2" id="pctH2"></div>
         </div>
-        <div class="ties-line">Ties: ${tiePct.toFixed(2)}% · ${total.toLocaleString()} boards</div>
-      </div>`;
-    return;
-  }
-
-  const h1 = [holeCards[0], holeCards[1]];
-  const h2 = [holeCards[2], holeCards[3]];
-  const result = Postflop.calculateEquity(h1, h2, boardCards);
-  if (!result) {
-    bar.innerHTML = `<div class="loading">Calculating…</div>`;
-    return;
-  }
-
-  const { pct1, pct2, tiePct, total } = result;
-  const stageLabels = { 1: '1 Card', 2: '2 Cards', 3: 'Flop', 4: 'Turn', 5: 'River' };
-  const stageLabel = stageLabels[boardCards.length] || '';
-
-  bar.innerHTML = `
-    <div class="stage-label">${stageLabel}</div>
-    <div class="equity-section">
-      <div class="split-bar-wrap">
-        <div class="split-bar">
-          <div class="bar-h1" style="width:${pct1}%"></div>
-          <div class="bar-h2" style="width:${pct2}%"></div>
-          <div class="bar-tie" style="width:${tiePct}%"></div>
-        </div>
+        <div class="splits-line" id="splitsLine"></div>
       </div>
-      <div class="bar-labels">
-        <div class="pct-h1">${pct1.toFixed(2)}%</div>
-        <div class="pct-h2">${pct2.toFixed(2)}%</div>
-      </div>
-      <div class="ties-line">Ties: ${tiePct.toFixed(2)}% · ${total.toLocaleString()} board${total !== 1 ? 's' : ''}</div>
     </div>`;
+}
+
+function hideEquityContent() {
+  const ct = document.getElementById('equityContent');
+  if (ct && ct.style.display !== 'none') {
+    ct.style.display = 'none';
+    // Reset bar widths so next reveal animates from 0
+    const b1 = document.getElementById('barH1');
+    const b2 = document.getElementById('barH2');
+    const bt = document.getElementById('barTie');
+    if (b1) b1.style.width = '0%';
+    if (b2) b2.style.width = '0%';
+    if (bt) bt.style.width = '0%';
+  }
+}
+
+function updateEquityBar() {
+  const ph  = document.getElementById('equityPlaceholder');
+  const ct  = document.getElementById('equityContent');
+  if (!ph || !ct) return;
+
+  function showPlaceholder(text, cls) {
+    hideEquityContent();
+    ph.textContent = text;
+    ph.className = cls || 'equity-placeholder';
+    ph.style.display = '';
+  }
+
+  if (!handsComplete()) {
+    showPlaceholder('Select hole cards to see equity');
+    return;
+  }
+
+  let pct1, pct2, tiePct, totalBoards, stageLabel;
+
+  if (boardCards.length === 0) {
+    if (!preflopEquity) {
+      showPlaceholder('Loading equity\u2026', 'loading');
+      return;
+    }
+    ({ pct1, pct2, tiePct, total: totalBoards } = preflopEquity);
+    stageLabel = 'Pre-flop';
+  } else {
+    const h1 = [holeCards[0], holeCards[1]];
+    const h2 = [holeCards[2], holeCards[3]];
+    const result = Postflop.calculateEquity(h1, h2, boardCards);
+    if (!result) {
+      showPlaceholder('Calculating\u2026', 'loading');
+      return;
+    }
+    ({ pct1, pct2, tiePct, total: totalBoards } = result);
+    const labels = { 1: '1 Card', 2: '2 Cards', 3: 'Flop', 4: 'Turn', 5: 'River' };
+    stageLabel = labels[boardCards.length];
+  }
+
+  // Hide placeholder, show content
+  ph.style.display = 'none';
+  const wasHidden = ct.style.display === 'none';
+  ct.style.display = '';
+
+  if (wasHidden) {
+    // Force layout so the bars animate from 0 → target
+    ct.offsetWidth;
+  }
+
+  // Update stage label with fade
+  const labelEl = document.getElementById('equityStageLabel');
+  if (labelEl.textContent !== stageLabel) {
+    labelEl.style.opacity = '0.3';
+    requestAnimationFrame(() => {
+      labelEl.textContent = stageLabel;
+      labelEl.style.opacity = '';
+    });
+  }
+
+  // Animate bar widths (CSS transition handles it)
+  document.getElementById('barH1').style.width = pct1 + '%';
+  document.getElementById('barH2').style.width = pct2 + '%';
+  document.getElementById('barTie').style.width = tiePct + '%';
+
+  // Update percentages with brief flash when value changes
+  flashUpdate('pctH1', pct1.toFixed(2) + '%');
+  flashUpdate('pctH2', pct2.toFixed(2) + '%');
+
+  // Bottom line: "Final board" at river, otherwise split info
+  const splitsEl = document.getElementById('splitsLine');
+  if (boardCards.length === 5) {
+    splitsEl.textContent = 'Final board';
+  } else {
+    splitsEl.textContent = `Split: ${tiePct.toFixed(2)}% \u00b7 ${totalBoards.toLocaleString()} board${totalBoards !== 1 ? 's' : ''}`;
+  }
+}
+
+function flashUpdate(id, newText) {
+  const el = document.getElementById(id);
+  if (!el || el.textContent === newText) return;
+  el.style.opacity = '0.3';
+  requestAnimationFrame(() => {
+    el.textContent = newText;
+    // Use a second rAF to trigger the fade-in after content update
+    requestAnimationFrame(() => { el.style.opacity = ''; });
+  });
 }
 
 // ── Render functions ──────────────────────────────────────────────────────────
@@ -829,8 +859,7 @@ function renderSlots() {
 
     if (card) {
       el.classList.add('filled');
-      const cardEl = renderCard(card);
-      el.appendChild(cardEl);
+      el.appendChild(renderCard(card));
       el.onclick = () => clearHoleSlot(i);
     } else {
       el.textContent = isActive ? '' : '+';
@@ -855,8 +884,7 @@ function renderSlots() {
 
     if (card) {
       el.classList.add('filled');
-      const cardEl = renderCard(card);
-      el.appendChild(cardEl);
+      el.appendChild(renderCard(card));
       el.onclick = () => clearBoardFrom(i);
     } else if (isActive || isNextAvailable) {
       el.textContent = isActive ? '' : '+';
@@ -878,13 +906,8 @@ function renderPickerGrid() {
       const cardStr = rank + suit.ch;
       const cell = document.getElementById('picker-' + cardStr);
       if (!cell) continue;
-
-      // Reset classes
       cell.className = 'picker-cell ' + suit.cls;
-
-      if (used.has(cardStr)) {
-        cell.classList.add('picker-used');
-      } else if (allDone) {
+      if (used.has(cardStr) || allDone) {
         cell.classList.add('picker-disabled');
       }
     }
@@ -907,7 +930,6 @@ function renderAll() {
 function buildPickerGrid() {
   const grid = document.getElementById('cardPickerGrid');
   grid.innerHTML = '';
-
   for (const suit of PICKER_SUITS) {
     for (const rank of PICKER_RANKS) {
       const cardStr = rank + suit.ch;
@@ -925,7 +947,6 @@ function buildPickerGrid() {
 function buildBoardSlots() {
   const container = document.getElementById('boardSlots');
   container.innerHTML = '';
-
   for (let i = 0; i < 5; i++) {
     if (i === 3 || i === 4) {
       const gap = document.createElement('div');
@@ -945,12 +966,10 @@ function pushHash() {
   const h1str = holeCards[0] && holeCards[1] ? holeCards[0] + holeCards[1] : '';
   const h2str = holeCards[2] && holeCards[3] ? holeCards[2] + holeCards[3] : '';
   const boardStr = boardCards.join('');
-
   const parts = [];
   if (h1str) parts.push(h1str);
   if (h2str) parts.push(h2str);
   if (boardStr) parts.push(boardStr);
-
   const hash = parts.length > 0 ? '#' + parts.join('/') : '';
   history.replaceState(null, '', hash || location.pathname);
 }
@@ -958,27 +977,19 @@ function pushHash() {
 function loadFromHash() {
   const hash = location.hash.replace('#', '');
   if (!hash) return;
-
   const parts = hash.split('/');
-  const h1Cards    = parts[0] ? parseCardPairs(parts[0]) : [];
-  const h2Cards    = parts[1] ? parseCardPairs(parts[1]) : [];
+  const h1Cards     = parts[0] ? parseCardPairs(parts[0]) : [];
+  const h2Cards     = parts[1] ? parseCardPairs(parts[1]) : [];
   const boardParsed = parts[2] ? parseCardPairs(parts[2]) : [];
-
-  // Validate: no duplicate cards
   const all = [...h1Cards, ...h2Cards, ...boardParsed];
   if (new Set(all).size !== all.length) return;
-
   if (h1Cards[0]) holeCards[0] = h1Cards[0];
   if (h1Cards[1]) holeCards[1] = h1Cards[1];
   if (h2Cards[0]) holeCards[2] = h2Cards[0];
   if (h2Cards[1]) holeCards[3] = h2Cards[1];
   boardCards = boardParsed.slice(0, 5);
-
-  // Set activeSlot to first unfilled hole slot, then first available board slot
   let next = null;
-  for (let i = 0; i < 4; i++) {
-    if (!holeCards[i]) { next = i; break; }
-  }
+  for (let i = 0; i < 4; i++) { if (!holeCards[i]) { next = i; break; } }
   if (next === null && handsComplete()) {
     next = boardCards.length < 5 ? 4 + boardCards.length : null;
   }
@@ -992,6 +1003,7 @@ window.addEventListener('hashchange', () => {
   preflopEquity = null;
   loadFromHash();
   renderAll();
+  hideEquityContent();
   updateEquityBar();
   if (handsComplete()) fetchPreflopEquity();
 });
@@ -1000,6 +1012,7 @@ window.addEventListener('hashchange', () => {
 
 buildPickerGrid();
 buildBoardSlots();
+initEquityBarStructure();
 loadFromHash();
 renderAll();
 updateEquityBar();
