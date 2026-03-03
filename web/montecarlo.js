@@ -187,7 +187,7 @@ const Multiway = (() => {
 
   // ── Monte Carlo estimation (needed ≥ 3) ───────────────────────────────────
 
-  const MC_SAMPLES = 50000;
+  const MC_SAMPLES = 100000;
   const MC_CHUNK   = 2500;
 
   let _runId = 0;
