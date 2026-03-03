@@ -548,15 +548,14 @@ const SUIT_MAP = {
 };
 
 function buildHandOrder() {
-  const ranks = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
   const order = [];
-  for (let i = 0; i < 13; i++) order.push(ranks[i] + ranks[i]);
+  for (let i = 0; i < 13; i++) order.push(PICKER_RANKS[i] + PICKER_RANKS[i]);
   for (let i = 0; i < 12; i++)
     for (let j = i + 1; j < 13; j++)
-      order.push(ranks[i] + ranks[j] + 's');
+      order.push(PICKER_RANKS[i] + PICKER_RANKS[j] + 's');
   for (let i = 0; i < 12; i++)
     for (let j = i + 1; j < 13; j++)
-      order.push(ranks[i] + ranks[j] + 'o');
+      order.push(PICKER_RANKS[i] + PICKER_RANKS[j] + 'o');
   return order;
 }
 
@@ -615,9 +614,14 @@ function renderCard(token) {
   const suit = SUIT_MAP[suitChar] || { sym: suitChar, cls: 'black' };
   const div = document.createElement('div');
   div.className = 'card';
-  div.innerHTML = `
-    <span class="rank ${suit.cls}">${rank}</span>
-    <span class="suit-sym ${suit.cls}">${suit.sym}</span>`;
+  const rankEl = document.createElement('span');
+  rankEl.className = 'rank ' + suit.cls;
+  rankEl.textContent = rank;
+  const suitEl = document.createElement('span');
+  suitEl.className = 'suit-sym ' + suit.cls;
+  suitEl.textContent = suit.sym;
+  div.appendChild(rankEl);
+  div.appendChild(suitEl);
   return div;
 }
 
@@ -702,13 +706,10 @@ async function fetchPreflopEquity() {
     preflopEquity = { pct1: p1, pct2: p2, tiePct: data.tie_pct, total: data.total };
     updateEquityBar();
   } catch (e) {
-    const ht1b = cardsToHandType(holeCards[0], holeCards[1]);
-    const ht2b = cardsToHandType(holeCards[2], holeCards[3]);
     const ph = document.getElementById('equityPlaceholder');
-    const ct = document.getElementById('equityContent');
-    if (ph && ct) {
+    if (ph) {
       hideEquityContent();
-      ph.textContent = `Could not load equity for ${ht1b} vs ${ht2b}.`;
+      ph.textContent = `Could not load equity for ${ht1} vs ${ht2}.`;
       ph.className = 'error-msg';
       ph.style.display = '';
     }
@@ -929,15 +930,20 @@ function renderAll() {
 
 function buildPickerGrid() {
   const grid = document.getElementById('cardPickerGrid');
-  grid.innerHTML = '';
   for (const suit of PICKER_SUITS) {
     for (const rank of PICKER_RANKS) {
       const cardStr = rank + suit.ch;
       const cell = document.createElement('div');
       cell.className = 'picker-cell ' + suit.cls;
       cell.id = 'picker-' + cardStr;
-      const displayRank = rank === 'T' ? '10' : rank;
-      cell.innerHTML = `<span class="picker-rank">${displayRank}</span><span class="picker-suit">${suit.sym}</span>`;
+      const rankSpan = document.createElement('span');
+      rankSpan.className = 'picker-rank';
+      rankSpan.textContent = rank === 'T' ? '10' : rank;
+      const suitSpan = document.createElement('span');
+      suitSpan.className = 'picker-suit';
+      suitSpan.textContent = suit.sym;
+      cell.appendChild(rankSpan);
+      cell.appendChild(suitSpan);
       cell.addEventListener('click', () => onPickerClick(cardStr));
       grid.appendChild(cell);
     }
