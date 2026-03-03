@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>pocketduel — Preflop Equity</title>
+<title>pocketduel — Poker Equity</title>
 <style>
   :root {
     --bg:        #0d0d17;
@@ -18,6 +18,7 @@
     --red-suit:  #ef4444;
     --card-bg:   #f0ede8;
     --card-text: #111111;
+    --active:    #fbbf24;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -25,7 +26,6 @@
   html, body {
     height: 100%;
     margin: 0;
-    overflow: hidden;
     background: var(--bg);
     color: var(--text);
     font-family: ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
@@ -35,117 +35,243 @@
     display: flex;
     flex-direction: column;
     height: 100dvh;
+    overflow: hidden;
   }
 
-  /* ── Selection bar ── */
-  .toggle-bar {
-    display: flex;
-    gap: 8px;
-    padding: 6px 8px;
+  /* ── Picker section (left panel desktop / fixed bottom mobile) ── */
+  .picker-section {
     background: var(--surface);
-    border-bottom: 1px solid #2a2a4a;
-    flex-shrink: 0;
-  }
-
-  .toggle-btn {
-    flex: 1;
-    padding: 5px 10px;
-    border-radius: 6px;
-    border: 2px solid transparent;
-    background: var(--surface2);
-    color: var(--muted);
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 600;
-    text-align: center;
-    transition: all 0.15s;
-    user-select: none;
-  }
-
-  .toggle-btn.active-1 {
-    border-color: var(--hand1);
-    background: var(--hand1-bg);
-    color: var(--hand1);
-  }
-
-  .toggle-btn.active-2 {
-    border-color: var(--hand2);
-    background: var(--hand2-bg);
-    color: var(--hand2);
-  }
-
-  .toggle-btn {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-  }
-
-  .btn-label { flex: 1; text-align: left; }
-
-  .lock-icon {
-    font-size: 13px;
-    opacity: 0.45;
-    padding: 0 2px;
-    cursor: pointer;
-    transition: opacity 0.15s;
-    flex-shrink: 0;
-  }
-
-  .lock-icon:hover { opacity: 0.9; }
-
-  .toggle-btn.locked .lock-icon { opacity: 1; }
-
-  .toggle-btn.locked-1 {
-    border-color: var(--hand1);
-    background: var(--hand1-bg);
-    color: var(--hand1);
-    opacity: 0.55;
-  }
-
-  .toggle-btn.locked-2 {
-    border-color: var(--hand2);
-    background: var(--hand2-bg);
-    color: var(--hand2);
-    opacity: 0.55;
-  }
-
-  /* ── Sections ── */
-  .range-section {
-    flex: 1 1 50%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    padding: 4px;
-  }
-
-  .matchup-section {
-    flex: 1 1 50%;
-    display: flex;
-    flex-direction: column;
+    flex-shrink: 0;
+    padding: 6px 5px 8px;
     border-top: 1px solid #2a2a4a;
+  }
+
+  .picker-section-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    margin-bottom: 5px;
+    flex-shrink: 0;
+    display: none; /* hidden on mobile */
+  }
+
+  /* ── Main section ── */
+  .main-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
   }
 
+  /* ── Scrollable content ── */
   .matchup-scroll {
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 8px 12px;
+    padding: 14px 12px 10px;
   }
 
+  /* ── Hands display ── */
+  .hands-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .hand-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .hand-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+  }
+
+  .hand-label.label-h1 { color: var(--hand1); }
+  .hand-label.label-h2 { color: var(--hand2); }
+
+  .hole-cards-row {
+    display: flex;
+    gap: 5px;
+  }
+
+  .vs-text {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    align-self: flex-end;
+    padding: 0 2px;
+    margin-bottom: 6px;
+  }
+
+  /* ── Card slots ── */
+  .hole-slot {
+    width: clamp(40px, 11vmin, 58px);
+    height: clamp(56px, 15vmin, 82px);
+    border: 2px dashed #3a3a5a;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3a3a5a;
+    font-size: 16px;
+    cursor: default;
+    flex-shrink: 0;
+    transition: border-color 0.15s, box-shadow 0.15s, outline 0.15s;
+    position: relative;
+  }
+
+  .hole-slot.slot-active {
+    border: 2px solid var(--active) !important;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.35);
+    color: var(--active);
+  }
+
+  .hole-slot.filled {
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .hole-slot.filled:hover {
+    filter: brightness(0.82);
+  }
+
+  .hole-slot.filled.slot-active {
+    outline: 2px solid var(--active);
+    outline-offset: 2px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .hole-slot.filled .card {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 5px;
+  }
+
+  /* Portrait playing card */
+  .card {
+    background: var(--card-bg);
+    color: var(--card-text);
+    border-radius: 5px;
+    width: clamp(40px, 11vmin, 58px);
+    height: clamp(56px, 15vmin, 82px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .card .rank {
+    font-size: clamp(16px, 5vmin, 26px);
+    font-weight: 800;
+    line-height: 1;
+    align-self: flex-start;
+  }
+
+  .card .suit-sym {
+    font-size: clamp(16px, 5vmin, 26px);
+    line-height: 1;
+    align-self: flex-end;
+  }
+
+  .card .red   { color: var(--red-suit); }
+  .card .black { color: #111; }
+
+  /* ── Community cards section ── */
+  .community-section {
+    padding: 0 2px 10px;
+  }
+
+  .board-slots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .board-slot-gap {
+    width: 10px;
+  }
+
+  .board-slot {
+    width: clamp(34px, 9.5vmin, 52px);
+    height: clamp(48px, 13vmin, 72px);
+    border: 2px dashed #3a3a5a;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3a3a5a;
+    font-size: 16px;
+    cursor: default;
+    flex-shrink: 0;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+
+  .board-slot.slot-active {
+    border: 2px solid var(--active) !important;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.35);
+    color: var(--active);
+  }
+
+  .board-slot.filled {
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .board-slot.filled:hover {
+    filter: brightness(0.82);
+  }
+
+  .board-slot.filled.slot-active {
+    outline: 2px solid var(--active);
+    outline-offset: 2px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .board-slot.filled .card {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 5px;
+  }
+
+  .board-slot.slot-inactive {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  /* ── Equity bar (always visible) ── */
   .equity-bar {
     flex-shrink: 0;
     padding: 10px 12px;
     border-top: 1px solid #2a2a4a;
     background: var(--surface);
-  }
-
-  .equity-bar:empty {
-    display: none;
+    min-height: 42px;
   }
 
   .equity-bar .stage-label {
@@ -157,112 +283,11 @@
     margin-bottom: 6px;
   }
 
-  /* ── Range grid ── */
-  .range-grid {
-    display: grid;
-    grid-template-columns: 1.5em repeat(13, 1fr);
-    grid-template-rows: 1.5em repeat(13, 1fr);
-    flex: 1;
-    gap: 1px;
-    font-size: clamp(8px, 2.8vmin, 13px);
-  }
-
-  .grid-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 2px;
-    cursor: pointer;
-    user-select: none;
-    transition: filter 0.1s;
-    font-size: inherit;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
-
-  .grid-cell:hover {
-    filter: brightness(1.25);
-  }
-
-  .cell-header {
-    color: var(--muted);
-    font-size: 0.85em;
-    cursor: default;
-  }
-
-  .cell-header:hover { filter: none; }
-
-  .cell-pair    { background: #24243e; }
-  .cell-suited  { background: #1c2a3a; }
-  .cell-offsuit { background: #211c30; }
-
-  .cell-sel1 { background: var(--hand1-bg) !important; outline: 2px solid var(--hand1); outline-offset: -1px; color: var(--hand1); }
-  .cell-sel2 { background: var(--hand2-bg) !important; outline: 2px solid var(--hand2); outline-offset: -1px; color: var(--hand2); }
-
-  /* ── Matchup section ── */
-  .matchup-placeholder {
-    color: var(--muted);
+  .equity-placeholder {
     text-align: center;
-    font-size: 13px;
-    line-height: 1.7;
-  }
-
-  .matchup-placeholder .arrow { font-size: 20px; margin: 4px 0; }
-
-  .hands-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-
-  .cards-row {
-    display: flex;
-    gap: 5px;
-    align-items: flex-end;
-  }
-
-  /* Portrait playing card */
-  .card {
-    background: var(--card-bg);
-    color: var(--card-text);
-    border-radius: 5px;
-    width: clamp(40px, 12vmin, 64px);
-    height: clamp(56px, 17vmin, 90px);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 3px 4px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .card .rank {
-    font-size: clamp(16px, 5vmin, 28px);
-    font-weight: 800;
-    line-height: 1;
-    align-self: flex-start;
-  }
-
-  .card .suit-sym {
-    font-size: clamp(16px, 5vmin, 28px);
-    line-height: 1;
-    align-self: flex-end;
-  }
-
-  .card .red  { color: var(--red-suit); }
-  .card .black { color: #111; }
-
-  .vs-text {
     color: var(--muted);
-    font-size: 15px;
-    font-weight: 600;
-    align-self: center;
-    padding: 0 4px;
-    margin-bottom: 0;
+    font-size: 12px;
+    padding: 6px 0;
   }
 
   /* ── Equity bars ── */
@@ -270,13 +295,10 @@
 
   .split-bar-wrap { position: relative; height: 28px; border-radius: 6px; overflow: hidden; background: #2a2a4a; }
 
-  .split-bar {
-    display: flex;
-    height: 100%;
-  }
+  .split-bar { display: flex; height: 100%; }
 
-  .bar-h1 { background: var(--hand1); transition: width 0.4s ease; }
-  .bar-h2 { background: var(--hand2); transition: width 0.4s ease; }
+  .bar-h1  { background: var(--hand1); transition: width 0.4s ease; }
+  .bar-h2  { background: var(--hand2); transition: width 0.4s ease; }
   .bar-tie { background: #44445a; transition: width 0.4s ease; }
 
   .bar-labels {
@@ -300,7 +322,7 @@
     text-align: center;
     color: var(--muted);
     font-size: 12px;
-    padding: 16px;
+    padding: 10px;
   }
 
   .error-msg {
@@ -311,140 +333,12 @@
     line-height: 1.5;
   }
 
-  /* ── Desktop layout ── */
-  @media (min-width: 768px) {
-    body { flex-direction: row; }
-
-    .toggle-bar {
-      /* moves into range-section on desktop */
-      display: none;
-    }
-
-    .range-section {
-      flex: 0 0 42%;
-      border-right: 1px solid #2a2a4a;
-      border-top: none;
-      padding: 8px;
-    }
-
-    .range-section .toggle-bar-inner {
-      display: flex;
-    }
-
-    .matchup-section {
-      flex: 0 0 58%;
-      border-top: none;
-    }
-
-    .matchup-scroll {
-      padding: 20px 28px;
-    }
-
-    .range-grid {
-      font-size: clamp(8px, 1vw, 13px);
-    }
-  }
-
-  /* inner toggle bar for desktop (inside range section) */
-  .toggle-bar-inner {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 6px;
-    flex-shrink: 0;
-  }
-
-  @media (max-width: 767px) {
-    .toggle-bar-inner { display: none; }
-  }
-
-  /* ── Postflop section ── */
-  .postflop-section {
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 1px solid #2a2a4a;
-  }
-
-  .postflop-label {
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 10px;
-  }
-
-  .board-slots {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-
-  .board-slot-gap {
-    width: 10px;
-  }
-
-  .board-slot {
-    width: clamp(34px, 10vmin, 52px);
-    height: clamp(48px, 14vmin, 73px);
-    border: 2px dashed #3a3a5a;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #3a3a5a;
-    font-size: 18px;
-    cursor: default;
-    flex-shrink: 0;
-  }
-
-  .board-slot.filled {
-    border: none;
-    padding: 0;
-    cursor: pointer;
-  }
-
-  .board-slot.filled:hover {
-    filter: brightness(0.85);
-  }
-
-  .board-slot.filled .card {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-  }
-
-  .board-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-
-  .clear-board-btn {
-    background: var(--surface2);
-    border: 1px solid #3a3a5a;
-    border-radius: 4px;
-    color: var(--muted);
-    font-family: inherit;
-    font-size: 10px;
-    padding: 3px 8px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .clear-board-btn:hover {
-    color: var(--text);
-    border-color: var(--text);
-  }
-
-  /* Card picker grid */
+  /* ── Card picker grid ── */
   .card-picker-grid {
     display: grid;
     grid-template-columns: repeat(13, 1fr);
     gap: 2px;
-    margin-top: 10px;
+    flex: 1;
   }
 
   .picker-cell {
@@ -452,279 +346,273 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 1px;
     padding: 3px 1px;
     border-radius: 3px;
     cursor: pointer;
     user-select: none;
-    font-size: clamp(9px, 2.5vmin, 12px);
-    font-weight: 600;
-    line-height: 1.1;
     background: var(--surface2);
+    border: 1px solid transparent;
     transition: all 0.1s;
   }
 
-  .picker-cell:hover:not(.picker-disabled):not(.picker-selected) {
-    filter: brightness(1.4);
+  .picker-cell:hover:not(.picker-disabled):not(.picker-used) {
+    filter: brightness(1.45);
   }
 
-  .picker-cell .picker-rank { font-size: 1em; }
-  .picker-cell .picker-suit { font-size: 0.85em; }
+  .picker-rank {
+    font-size: clamp(11px, 3.2vmin, 15px);
+    font-weight: 800;
+    line-height: 1;
+  }
 
-  .picker-cell.suit-red { color: var(--red-suit); }
+  .picker-suit {
+    font-size: clamp(9px, 2.5vmin, 12px);
+    line-height: 1;
+  }
+
+  .picker-cell.suit-red   { color: var(--red-suit); }
   .picker-cell.suit-black { color: #b0b8c8; }
 
   .picker-cell.picker-disabled {
-    opacity: 0.2;
+    opacity: 0.15;
     cursor: not-allowed;
+    pointer-events: none;
   }
 
-  .picker-cell.picker-selected {
-    background: #3b2d80;
-    outline: 2px solid #7c5fd6;
-    outline-offset: -1px;
+  .picker-cell.picker-used {
+    background: #2a1d60;
+    border: 1px solid #5a3fb0;
+    cursor: pointer;
+    opacity: 0.7;
   }
 
-  .postflop-hint {
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 10px;
-    line-height: 1.5;
+  .picker-cell.picker-used:hover {
+    opacity: 1;
+    filter: brightness(1.3);
+  }
+
+  /* ── Mobile layout ── */
+  @media (max-width: 767px) {
+    body { overflow: hidden; }
+
+    .picker-section {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 5px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+      border-top: 2px solid #2a2a4a;
+    }
+
+    .main-section {
+      overflow-y: auto;
+      padding-bottom: 186px;
+    }
+
+    .matchup-scroll {
+      justify-content: flex-start;
+      padding: 14px 10px 10px;
+    }
+  }
+
+  /* ── Desktop layout ── */
+  @media (min-width: 768px) {
+    body { flex-direction: row; }
+
+    .picker-section {
+      flex: 0 0 36%;
+      border-top: none;
+      border-right: 1px solid #2a2a4a;
+      padding: 12px 10px;
+      overflow-y: auto;
+      justify-content: flex-start;
+    }
+
+    .picker-section-label {
+      display: block;
+    }
+
+    .card-picker-grid {
+      flex: none;
+    }
+
+    .picker-cell {
+      padding: 6px 2px;
+    }
+
+    .picker-rank {
+      font-size: clamp(12px, 1.3vw, 17px);
+    }
+
+    .picker-suit {
+      font-size: clamp(10px, 1.0vw, 13px);
+    }
+
+    .main-section {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .matchup-scroll {
+      padding: 20px 24px 12px;
+    }
+
+    .hands-display {
+      gap: 14px;
+    }
+
+    .hole-slot {
+      width: clamp(44px, 7vw, 68px);
+      height: clamp(60px, 10vw, 96px);
+    }
+
+    .card {
+      width: clamp(44px, 7vw, 68px);
+      height: clamp(60px, 10vw, 96px);
+    }
+
+    .board-slot {
+      width: clamp(36px, 5.5vw, 56px);
+      height: clamp(50px, 8vw, 80px);
+    }
+
+    .equity-bar {
+      padding: 12px 24px;
+    }
   }
 </style>
 </head>
 <body>
 
-<!-- Mobile toggle bar (outside sections) -->
-<div class="toggle-bar" id="toggleBarMobile">
-  <button class="toggle-btn active-1" id="btn1Mobile">● Hand 1</button>
-  <button class="toggle-btn" id="btn2Mobile">  Hand 2</button>
+<!-- Picker section: left panel (desktop) / fixed bottom (mobile) -->
+<div class="picker-section" id="pickerSection">
+  <div class="picker-section-label">Select a Card</div>
+  <div class="card-picker-grid" id="cardPickerGrid"></div>
 </div>
 
-<!-- Range section -->
-<div class="range-section">
-  <!-- Desktop toggle bar (inside range section) -->
-  <div class="toggle-bar-inner">
-    <button class="toggle-btn active-1" id="btn1Desktop">● Hand 1</button>
-    <button class="toggle-btn" id="btn2Desktop">  Hand 2</button>
-  </div>
-  <div class="range-grid" id="rangeGrid"></div>
-</div>
-
-<!-- Matchup section -->
-<div class="matchup-section" id="matchupSection">
+<!-- Main section: right panel (desktop) / scrollable content (mobile) -->
+<div class="main-section">
   <div class="matchup-scroll" id="matchupScroll">
-    <div class="matchup-placeholder" id="matchupPlaceholder">
-      <div class="arrow">♠♥♦♣</div>
-      <div>Select two hands from the grid</div>
-      <div style="font-size:11px;margin-top:6px;color:var(--muted)">Click a cell to pick Hand 1, then another for Hand 2</div>
+
+    <!-- Hole cards display -->
+    <div class="hands-display" id="handsDisplay">
+      <div class="hand-group">
+        <div class="hand-label label-h1">Hand 1</div>
+        <div class="hole-cards-row">
+          <div class="hole-slot slot-active" id="holeSlot0"></div>
+          <div class="hole-slot" id="holeSlot1"></div>
+        </div>
+      </div>
+
+      <div class="vs-text">vs</div>
+
+      <div class="hand-group">
+        <div class="hand-label label-h2">Hand 2</div>
+        <div class="hole-cards-row">
+          <div class="hole-slot" id="holeSlot2"></div>
+          <div class="hole-slot" id="holeSlot3"></div>
+        </div>
+      </div>
     </div>
-    <div id="matchupContent" style="display:none"></div>
+
+    <!-- Community cards (always in DOM, shown after hole cards selected) -->
+    <div class="community-section" id="communitySection" style="display:none">
+      <div class="board-slots" id="boardSlots"></div>
+    </div>
+
   </div>
-  <div class="equity-bar" id="equityBar"></div>
+
+  <!-- Equity bar: always visible -->
+  <div class="equity-bar" id="equityBar">
+    <div class="equity-placeholder">Select hole cards to see equity</div>
+  </div>
 </div>
 
 <script src="postflop.js"></script>
 <script>
-const RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
 
-// Build canonical hand order matching Rust all_hand_types()
-// 1. Pairs AA→22
-// 2. Suited AKs→32s (r1 from A to 3, r2 from r1-1 down to 2)
-// 3. Offsuit AKo→32o (same order)
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const PICKER_RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
+const PICKER_SUITS = [
+  { ch: 's', sym: '\u2660', cls: 'suit-black' },
+  { ch: 'h', sym: '\u2665', cls: 'suit-red'   },
+  { ch: 'd', sym: '\u2666', cls: 'suit-red'   },
+  { ch: 'c', sym: '\u2663', cls: 'suit-black' },
+];
+
+const SUIT_MAP = {
+  h: { sym: '♥', cls: 'red'   },
+  d: { sym: '♦', cls: 'red'   },
+  c: { sym: '♣', cls: 'black' },
+  s: { sym: '♠', cls: 'black' },
+};
+
+// Hand type order for JSON file lookup (matches Rust generation order)
 function buildHandOrder() {
+  const ranks = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
   const order = [];
-  // Pairs
-  for (let i = 0; i < 13; i++) order.push(RANKS[i] + RANKS[i]);
-  // Suited: r1 index 0(A) to 11(3), r2 from r1+1 to 12(2)
-  for (let i = 0; i < 12; i++) {
-    for (let j = i + 1; j < 13; j++) {
-      order.push(RANKS[i] + RANKS[j] + 's');
-    }
-  }
-  // Offsuit same order
-  for (let i = 0; i < 12; i++) {
-    for (let j = i + 1; j < 13; j++) {
-      order.push(RANKS[i] + RANKS[j] + 'o');
-    }
-  }
+  for (let i = 0; i < 13; i++) order.push(ranks[i] + ranks[i]);
+  for (let i = 0; i < 12; i++)
+    for (let j = i + 1; j < 13; j++)
+      order.push(ranks[i] + ranks[j] + 's');
+  for (let i = 0; i < 12; i++)
+    for (let j = i + 1; j < 13; j++)
+      order.push(ranks[i] + ranks[j] + 'o');
   return order;
 }
 
-const HAND_ORDER = buildHandOrder();
+const HAND_TYPE_ORDER = buildHandOrder();
 
-function getMatchupInfo(h1, h2) {
-  const i1 = HAND_ORDER.indexOf(h1);
-  const i2 = HAND_ORDER.indexOf(h2);
-  if (i1 <= i2) {
-    return { file: `equity_data/${h1}_vs_${h2}.json`, swapped: false };
-  } else {
-    return { file: `equity_data/${h2}_vs_${h1}.json`, swapped: true };
-  }
+// ── State ───────────────────────────────────────────────────────────────────
+
+let holeCards  = [null, null, null, null]; // [h1c1, h1c2, h2c1, h2c2]
+let boardCards = [];                        // 0–5 community card strings
+let activeSlot = 0;                         // 0-3=hole, 4-8=board, null=all done
+let preflopEquity = null;                   // { pct1, pct2, tiePct, total }
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function handsComplete() {
+  return holeCards.every(c => c !== null);
 }
 
-// State
-let selectingHand = 1;
-let hand1 = null;
-let hand2 = null;
-let lockedHand = null; // null | 1 | 2
-
-function setSelecting(n) {
-  if (lockedHand === n) return; // can't select into a locked slot
-  selectingHand = n;
-  updateToggleButtons();
+function getAllUsedCards() {
+  const used = new Set();
+  for (const c of holeCards) { if (c) used.add(c); }
+  for (const c of boardCards) used.add(c);
+  return used;
 }
 
-function toggleLock(n) {
-  lockedHand = (lockedHand === n) ? null : n;
-  // If we just locked a hand, force selecting to the other slot
-  if (lockedHand !== null) selectingHand = lockedHand === 1 ? 2 : 1;
-  updateToggleButtons();
+function cardsToHandType(c1, c2) {
+  const r1 = c1[0], r2 = c2[0], s1 = c1[1], s2 = c2[1];
+  const i1 = PICKER_RANKS.indexOf(r1), i2 = PICKER_RANKS.indexOf(r2);
+  if (i1 === i2) return r1 + r2;
+  const [hi, lo] = i1 < i2 ? [r1, r2] : [r2, r1];
+  return hi + lo + (s1 === s2 ? 's' : 'o');
 }
 
-function updateToggleButtons() {
-  for (const [n, ids] of [[1, ['btn1Mobile','btn1Desktop']], [2, ['btn2Mobile','btn2Desktop']]]) {
-    const hand = n === 1 ? hand1 : hand2;
-    const isSelecting = selectingHand === n;
-    const isLocked = lockedHand === n;
-    const label = hand ? `● ${hand}` : `● Hand ${n}`;
-    const lockSym = isLocked ? '🔒' : '🔓';
+function getMatchupInfo(ht1, ht2) {
+  const i1 = HAND_TYPE_ORDER.indexOf(ht1);
+  const i2 = HAND_TYPE_ORDER.indexOf(ht2);
+  if (i1 <= i2) return { file: `equity_data/${ht1}_vs_${ht2}.json`, swapped: false };
+  return { file: `equity_data/${ht2}_vs_${ht1}.json`, swapped: true };
+}
 
-    let cls = 'toggle-btn';
-    if (isLocked)          cls += ` locked locked-${n}`;
-    else if (isSelecting)  cls += ` active-${n}`;
-
-    for (const id of ids) {
-      const el = document.getElementById(id);
-      el.className = cls;
-      el.innerHTML = `<span class="btn-label">${label}</span><span class="lock-icon">${lockSym}</span>`;
-      el.onclick = () => setSelecting(n);
-      el.querySelector('.lock-icon').onclick = e => { e.stopPropagation(); toggleLock(n); };
+function parseCardPairs(str) {
+  const cards = [];
+  for (let i = 0; i + 1 < str.length; i += 2) {
+    const c = str[i] + str[i + 1];
+    if ('AKQJT98765432'.includes(c[0]) && 'hdcs'.includes(c[1])) {
+      cards.push(c);
     }
   }
+  return cards;
 }
 
-// Cell name from grid coordinates
-function cellName(row, col) {
-  // row, col are 0-indexed rank indices
-  if (row === col) return RANKS[row] + RANKS[row];
-  if (row < col)  return RANKS[row] + RANKS[col] + 's';
-  return RANKS[col] + RANKS[row] + 'o';
-}
-
-// Build grid
-function buildGrid() {
-  const grid = document.getElementById('rangeGrid');
-  grid.innerHTML = '';
-
-  // Top-left corner
-  const corner = document.createElement('div');
-  corner.className = 'grid-cell cell-header';
-  grid.appendChild(corner);
-
-  // Column headers
-  for (const r of RANKS) {
-    const h = document.createElement('div');
-    h.className = 'grid-cell cell-header';
-    h.textContent = r;
-    grid.appendChild(h);
-  }
-
-  // Rows
-  for (let row = 0; row < 13; row++) {
-    // Row header
-    const rh = document.createElement('div');
-    rh.className = 'grid-cell cell-header';
-    rh.textContent = RANKS[row];
-    grid.appendChild(rh);
-
-    for (let col = 0; col < 13; col++) {
-      const name = cellName(row, col);
-      const cell = document.createElement('div');
-      cell.id = 'cell-' + name;
-      cell.className = 'grid-cell ' + (row === col ? 'cell-pair' : row < col ? 'cell-suited' : 'cell-offsuit');
-      cell.textContent = name;
-      cell.addEventListener('click', () => onCellClick(name));
-      grid.appendChild(cell);
-    }
-  }
-}
-
-function onCellClick(name) {
-  // If one hand is locked, always fill the other slot
-  const target = lockedHand === 1 ? 2 : lockedHand === 2 ? 1 : selectingHand;
-  if (target === 1) {
-    hand1 = name;
-    if (lockedHand === null) selectingHand = 2;
-  } else {
-    hand2 = name;
-    if (lockedHand === null) selectingHand = 1;
-  }
-  pushHash();
-  renderGrid();
-  updateToggleButtons();
-  if (hand1 && hand2) {
-    if (hand1 === hand2) {
-      showError('Select two different hands (same hand vs itself is not supported).');
-    } else {
-      fetchAndShowEquity();
-    }
-  }
-}
-
-// ── URL hash state ──────────────────────────────────────────────────────────
-
-function pushHash() {
-  const h = hand1 && hand2 ? `#${hand1}/${hand2}` : hand1 ? `#${hand1}` : '';
-  history.replaceState(null, '', h || location.pathname);
-}
-
-function loadFromHash() {
-  const hash = location.hash.replace('#', '');
-  if (!hash) return;
-  const parts = hash.split('/');
-  const h1 = parts[0] ? parts[0].toUpperCase() : null;
-  const h2 = parts[1] ? parts[1].toUpperCase() : null;
-  // Validate against known hands
-  if (h1 && HAND_ORDER.includes(h1)) hand1 = h1;
-  if (h2 && HAND_ORDER.includes(h2)) hand2 = h2;
-  selectingHand = hand1 && !hand2 ? 2 : 1;
-}
-
-window.addEventListener('hashchange', () => {
-  hand1 = null; hand2 = null; lockedHand = null; selectingHand = 1;
-  resolvedHand1 = null; resolvedHand2 = null; boardCards = []; preflopEquity = null;
-  loadFromHash();
-  renderGrid();
-  updateToggleButtons();
-  if (hand1 && hand2 && hand1 !== hand2) fetchAndShowEquity();
-  else {
-    document.getElementById('matchupPlaceholder').style.display = '';
-    document.getElementById('matchupContent').style.display = 'none';
-    updateEquityBar();
-  }
-});
-
-function renderGrid() {
-  // Reset all cells
-  for (let row = 0; row < 13; row++) {
-    for (let col = 0; col < 13; col++) {
-      const name = cellName(row, col);
-      const cell = document.getElementById('cell-' + name);
-      if (!cell) continue;
-      let base = row === col ? 'cell-pair' : row < col ? 'cell-suited' : 'cell-offsuit';
-      if (name === hand1) base += ' cell-sel1';
-      else if (name === hand2) base += ' cell-sel2';
-      cell.className = 'grid-cell ' + base;
-    }
-  }
-}
-
-// Card rendering
-const SUIT_MAP = { h: { sym: '♥', cls: 'red' }, d: { sym: '♦', cls: 'red' }, c: { sym: '♣', cls: 'black' }, s: { sym: '♠', cls: 'black' } };
+// ── Card rendering ───────────────────────────────────────────────────────────
 
 function renderCard(token) {
-  // token like "Ah", "Kd", "Ts"
   const rankChar = token[0];
   const suitChar = token[1];
   const rank = rankChar === 'T' ? '10' : rankChar;
@@ -737,192 +625,174 @@ function renderCard(token) {
   return div;
 }
 
-function parseCards(resolved) {
-  // "AhKh" → ["Ah","Kh"]
-  const tokens = [];
-  for (let i = 0; i < resolved.length; i += 2) {
-    tokens.push(resolved.slice(i, i + 2));
+// ── Slot actions ─────────────────────────────────────────────────────────────
+
+function setActiveSlot(i) {
+  activeSlot = i;
+  renderSlots();
+  renderPickerGrid();
+}
+
+function clearHoleSlot(i) {
+  holeCards[i] = null;
+  activeSlot = i;
+  // Clearing a hole card invalidates equity and board
+  preflopEquity = null;
+  boardCards = [];
+  renderAll();
+  updateEquityBar();
+  pushHash();
+}
+
+function clearBoardFrom(idx) {
+  boardCards = boardCards.slice(0, idx);
+  activeSlot = 4 + idx;
+  renderSlots();
+  renderPickerGrid();
+  updateEquityBar();
+  pushHash();
+}
+
+function clearBoard() {
+  boardCards = [];
+  activeSlot = 4;
+  renderSlots();
+  renderPickerGrid();
+  updateEquityBar();
+  pushHash();
+}
+
+// ── Picker click handler ──────────────────────────────────────────────────────
+
+function onPickerClick(cardStr) {
+  // If card is already in a hole slot → clear that hole slot
+  const holeIdx = holeCards.indexOf(cardStr);
+  if (holeIdx !== -1) {
+    clearHoleSlot(holeIdx);
+    return;
   }
-  return tokens;
-}
 
-function showLoading() {
-  document.getElementById('matchupPlaceholder').style.display = 'none';
-  const content = document.getElementById('matchupContent');
-  content.style.display = 'block';
-  content.innerHTML = '<div class="loading">Loading equity data…</div>';
-}
+  // If card is in board → clear from that board index
+  const boardIdx = boardCards.indexOf(cardStr);
+  if (boardIdx !== -1) {
+    clearBoardFrom(boardIdx);
+    return;
+  }
 
-function showError(msg) {
-  document.getElementById('matchupPlaceholder').style.display = 'none';
-  const content = document.getElementById('matchupContent');
-  content.style.display = 'block';
-  content.innerHTML = `<div class="error-msg">${msg}</div>`;
-}
+  // No active slot — all done
+  if (activeSlot === null) return;
 
-function showMatchup(data, swapped) {
-  const uiResolved1 = swapped ? data.hand2_resolved : data.hand1_resolved;
-  const uiResolved2 = swapped ? data.hand1_resolved : data.hand2_resolved;
+  if (activeSlot >= 0 && activeSlot <= 3) {
+    // Place into hole card slot
+    holeCards[activeSlot] = cardStr;
 
-  document.getElementById('matchupPlaceholder').style.display = 'none';
-  const content = document.getElementById('matchupContent');
-  content.style.display = 'block';
-
-  // Build cards row: [card][card] vs [card][card]
-  const cards1 = parseCards(uiResolved1);
-  const cards2 = parseCards(uiResolved2);
-
-  const row = document.createElement('div');
-  row.className = 'hands-row';
-
-  const cr1 = document.createElement('div');
-  cr1.className = 'cards-row';
-  cards1.forEach(c => cr1.appendChild(renderCard(c)));
-
-  const vsEl = document.createElement('div');
-  vsEl.className = 'vs-text';
-  vsEl.textContent = 'vs';
-
-  const cr2 = document.createElement('div');
-  cr2.className = 'cards-row';
-  cards2.forEach(c => cr2.appendChild(renderCard(c)));
-
-  row.appendChild(cr1);
-  row.appendChild(vsEl);
-  row.appendChild(cr2);
-
-  content.innerHTML = '';
-  content.appendChild(row);
-}
-
-// ── Postflop state & UI ─────────────────────────────────────────────────────
-
-let boardCards = [];      // e.g. ["Ah", "Kd", "5c"]
-let resolvedHand1 = null; // e.g. ["Ah", "Kd"]
-let resolvedHand2 = null; // e.g. ["Qc", "Jh"]
-let preflopEquity = null; // { pct1, pct2, tiePct, total }
-
-const PICKER_RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
-const PICKER_SUITS = [
-  { ch: 's', sym: '\u2660', cls: 'suit-black' },
-  { ch: 'h', sym: '\u2665', cls: 'suit-red' },
-  { ch: 'd', sym: '\u2666', cls: 'suit-red' },
-  { ch: 'c', sym: '\u2663', cls: 'suit-black' },
-];
-
-function showPostflopSection() {
-  const content = document.getElementById('matchupContent');
-  // Remove old postflop section if present
-  const old = document.getElementById('postflopSection');
-  if (old) old.remove();
-
-  if (!resolvedHand1 || !resolvedHand2) return;
-
-  const section = document.createElement('div');
-  section.className = 'postflop-section';
-  section.id = 'postflopSection';
-
-  // Header row with label + clear button
-  const headerRow = document.createElement('div');
-  headerRow.className = 'board-header-row';
-  const label = document.createElement('div');
-  label.className = 'postflop-label';
-  label.textContent = 'Community Cards';
-  const clearBtn = document.createElement('button');
-  clearBtn.className = 'clear-board-btn';
-  clearBtn.textContent = 'Clear';
-  clearBtn.onclick = () => { boardCards = []; renderPostflop(); };
-  headerRow.appendChild(label);
-  headerRow.appendChild(clearBtn);
-  section.appendChild(headerRow);
-
-  // Board slots: [f1][f2][f3] gap [t] gap [r]
-  const slotsRow = document.createElement('div');
-  slotsRow.className = 'board-slots';
-  const slotLabels = ['Flop', '', '', 'Turn', 'River'];
-  for (let i = 0; i < 5; i++) {
-    if (i === 3 || i === 4) {
-      const gap = document.createElement('div');
-      gap.className = 'board-slot-gap';
-      slotsRow.appendChild(gap);
+    // Find next empty hole slot
+    let nextHole = null;
+    for (let i = 0; i < 4; i++) {
+      if (!holeCards[i]) { nextHole = i; break; }
     }
-    const slot = document.createElement('div');
-    slot.className = 'board-slot';
-    slot.id = 'boardSlot' + i;
-    if (i < boardCards.length) {
-      slot.classList.add('filled');
-      slot.innerHTML = '';
-      slot.appendChild(renderCard(boardCards[i]));
-      slot.onclick = () => { boardCards.splice(i, 1); renderPostflop(); };
+
+    if (nextHole !== null) {
+      activeSlot = nextHole;
     } else {
-      slot.textContent = '+';
+      // All hole cards filled → move to community phase
+      activeSlot = 4 + boardCards.length;
+      // Trigger pre-flop equity fetch
+      fetchPreflopEquity();
     }
-    slotsRow.appendChild(slot);
-  }
-  section.appendChild(slotsRow);
 
-  // Card picker grid
-  const grid = document.createElement('div');
-  grid.className = 'card-picker-grid';
-  const usedCards = new Set([...resolvedHand1, ...resolvedHand2, ...boardCards]);
-  for (const suit of PICKER_SUITS) {
-    for (const rank of PICKER_RANKS) {
-      const cardStr = rank + suit.ch;
-      const cell = document.createElement('div');
-      cell.className = 'picker-cell ' + suit.cls;
-      cell.innerHTML = `<span class="picker-rank">${rank === 'T' ? '10' : rank}</span><span class="picker-suit">${suit.sym}</span>`;
-      if (usedCards.has(cardStr) && !boardCards.includes(cardStr)) {
-        cell.classList.add('picker-disabled');
-      } else if (boardCards.includes(cardStr)) {
-        cell.classList.add('picker-selected');
-        cell.onclick = () => {
-          const idx = boardCards.indexOf(cardStr);
-          boardCards.splice(idx, 1);
-          renderPostflop();
-        };
-      } else {
-        if (boardCards.length < 5) {
-          cell.onclick = () => {
-            boardCards.push(cardStr);
-            renderPostflop();
-          };
-        }
-      }
-      grid.appendChild(cell);
+    renderAll();
+    pushHash();
+
+  } else if (activeSlot >= 4 && activeSlot <= 8) {
+    // Place into community slot
+    boardCards.push(cardStr);
+    if (boardCards.length < 5) {
+      activeSlot = 4 + boardCards.length;
+    } else {
+      activeSlot = null;
     }
-  }
-  section.appendChild(grid);
 
-  content.appendChild(section);
+    renderSlots();
+    renderPickerGrid();
+    updateEquityBar();
+    pushHash();
+  }
 }
+
+// ── Equity fetch ──────────────────────────────────────────────────────────────
+
+async function fetchPreflopEquity() {
+  if (!handsComplete()) return;
+
+  const ht1 = cardsToHandType(holeCards[0], holeCards[1]);
+  const ht2 = cardsToHandType(holeCards[2], holeCards[3]);
+  const { file, swapped } = getMatchupInfo(ht1, ht2);
+
+  updateEquityBar(); // show loading state
+
+  try {
+    const resp = await fetch(file);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const p1 = swapped ? data.win_pct2 : data.win_pct1;
+    const p2 = swapped ? data.win_pct1 : data.win_pct2;
+    preflopEquity = { pct1: p1, pct2: p2, tiePct: data.tie_pct, total: data.total };
+    updateEquityBar();
+  } catch (e) {
+    const ht1 = cardsToHandType(holeCards[0], holeCards[1]);
+    const ht2 = cardsToHandType(holeCards[2], holeCards[3]);
+    document.getElementById('equityBar').innerHTML =
+      `<div class="error-msg">Could not load equity for ${ht1} vs ${ht2}.</div>`;
+  }
+}
+
+// ── Equity bar ────────────────────────────────────────────────────────────────
 
 function updateEquityBar() {
   const bar = document.getElementById('equityBar');
 
-  if (!resolvedHand1 || !resolvedHand2) {
-    bar.innerHTML = '';
+  if (!handsComplete()) {
+    bar.innerHTML = `<div class="equity-placeholder">Select hole cards to see equity</div>`;
     return;
   }
 
-  let pct1, pct2, tiePct, totalBoards, stageLabel;
-
   if (boardCards.length === 0) {
-    if (!preflopEquity) { bar.innerHTML = ''; return; }
-    pct1 = preflopEquity.pct1;
-    pct2 = preflopEquity.pct2;
-    tiePct = preflopEquity.tiePct;
-    totalBoards = preflopEquity.total;
-    stageLabel = 'Pre-flop';
-  } else {
-    const result = Postflop.calculateEquity(resolvedHand1, resolvedHand2, boardCards);
-    if (!result) { bar.innerHTML = ''; return; }
-    pct1 = result.pct1;
-    pct2 = result.pct2;
-    tiePct = result.tiePct;
-    totalBoards = result.total;
-    const labels = { 1: '1 Card', 2: '2 Cards', 3: 'Flop', 4: 'Turn', 5: 'River' };
-    stageLabel = labels[boardCards.length];
+    if (!preflopEquity) {
+      bar.innerHTML = `<div class="loading">Loading equity…</div>`;
+      return;
+    }
+    const { pct1, pct2, tiePct, total } = preflopEquity;
+    bar.innerHTML = `
+      <div class="stage-label">Pre-flop</div>
+      <div class="equity-section">
+        <div class="split-bar-wrap">
+          <div class="split-bar">
+            <div class="bar-h1" style="width:${pct1}%"></div>
+            <div class="bar-h2" style="width:${pct2}%"></div>
+            <div class="bar-tie" style="width:${tiePct}%"></div>
+          </div>
+        </div>
+        <div class="bar-labels">
+          <div class="pct-h1">${pct1.toFixed(2)}%</div>
+          <div class="pct-h2">${pct2.toFixed(2)}%</div>
+        </div>
+        <div class="ties-line">Ties: ${tiePct.toFixed(2)}% · ${total.toLocaleString()} boards</div>
+      </div>`;
+    return;
   }
+
+  const h1 = [holeCards[0], holeCards[1]];
+  const h2 = [holeCards[2], holeCards[3]];
+  const result = Postflop.calculateEquity(h1, h2, boardCards);
+  if (!result) {
+    bar.innerHTML = `<div class="loading">Calculating…</div>`;
+    return;
+  }
+
+  const { pct1, pct2, tiePct, total } = result;
+  const stageLabels = { 1: '1 Card', 2: '2 Cards', 3: 'Flop', 4: 'Turn', 5: 'River' };
+  const stageLabel = stageLabels[boardCards.length] || '';
 
   bar.innerHTML = `
     <div class="stage-label">${stageLabel}</div>
@@ -938,52 +808,203 @@ function updateEquityBar() {
         <div class="pct-h1">${pct1.toFixed(2)}%</div>
         <div class="pct-h2">${pct2.toFixed(2)}%</div>
       </div>
-      <div class="ties-line">Ties: ${tiePct.toFixed(2)}%  \u00b7  ${totalBoards.toLocaleString()} board${totalBoards !== 1 ? 's' : ''}</div>
-    </div>
-  `;
+      <div class="ties-line">Ties: ${tiePct.toFixed(2)}% · ${total.toLocaleString()} board${total !== 1 ? 's' : ''}</div>
+    </div>`;
 }
 
-function renderPostflop() {
-  showPostflopSection();
-  updateEquityBar();
-}
+// ── Render functions ──────────────────────────────────────────────────────────
 
-async function fetchAndShowEquity() {
-  const { file, swapped } = getMatchupInfo(hand1, hand2);
-  showLoading();
-  try {
-    const resp = await fetch(file);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    showMatchup(data, swapped);
+function renderSlots() {
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('holeSlot' + i);
+    if (!el) continue;
 
-    // Store resolved hole cards
-    const r1 = swapped ? data.hand2_resolved : data.hand1_resolved;
-    const r2 = swapped ? data.hand1_resolved : data.hand2_resolved;
-    resolvedHand1 = parseCards(r1);
-    resolvedHand2 = parseCards(r2);
+    const card = holeCards[i];
+    const isActive = activeSlot === i;
 
-    // Store pre-flop equity for the equity bar
-    const wins1pct = swapped ? data.win_pct2 : data.win_pct1;
-    const wins2pct = swapped ? data.win_pct1 : data.win_pct2;
-    preflopEquity = { pct1: wins1pct, pct2: wins2pct, tiePct: data.tie_pct, total: data.total };
+    el.className = 'hole-slot';
+    if (isActive) el.classList.add('slot-active');
+    el.innerHTML = '';
+    el.onclick = null;
 
-    boardCards = [];
-    showPostflopSection();
-    updateEquityBar();
-  } catch (e) {
-    resolvedHand1 = null; resolvedHand2 = null; preflopEquity = null;
-    showError(`Could not load equity data.`);
-    updateEquityBar();
+    if (card) {
+      el.classList.add('filled');
+      const cardEl = renderCard(card);
+      el.appendChild(cardEl);
+      el.onclick = () => clearHoleSlot(i);
+    } else {
+      el.textContent = isActive ? '' : '+';
+      el.onclick = () => setActiveSlot(i);
+    }
+  }
+
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById('boardSlot' + i);
+    if (!el) continue;
+
+    const card = boardCards[i];
+    const isActive = activeSlot === 4 + i;
+    const isNextAvailable = (i === boardCards.length) && handsComplete();
+    const isBeyond = i > boardCards.length;
+
+    el.className = 'board-slot';
+    if (isActive) el.classList.add('slot-active');
+    if (isBeyond) el.classList.add('slot-inactive');
+    el.innerHTML = '';
+    el.onclick = null;
+
+    if (card) {
+      el.classList.add('filled');
+      const cardEl = renderCard(card);
+      el.appendChild(cardEl);
+      el.onclick = () => clearBoardFrom(i);
+    } else if (isActive || isNextAvailable) {
+      el.textContent = isActive ? '' : '+';
+      if (isNextAvailable && !isActive) {
+        el.onclick = () => setActiveSlot(4 + i);
+      }
+    } else if (!isBeyond) {
+      el.textContent = '+';
+    }
   }
 }
 
-// Init
-buildGrid();
+function renderPickerGrid() {
+  const used = getAllUsedCards();
+  const allDone = activeSlot === null;
+
+  for (const suit of PICKER_SUITS) {
+    for (const rank of PICKER_RANKS) {
+      const cardStr = rank + suit.ch;
+      const cell = document.getElementById('picker-' + cardStr);
+      if (!cell) continue;
+
+      // Reset classes
+      cell.className = 'picker-cell ' + suit.cls;
+
+      if (used.has(cardStr)) {
+        cell.classList.add('picker-used');
+      } else if (allDone) {
+        cell.classList.add('picker-disabled');
+      }
+    }
+  }
+}
+
+function renderCommunitySection() {
+  const section = document.getElementById('communitySection');
+  section.style.display = (handsComplete() || boardCards.length > 0) ? '' : 'none';
+}
+
+function renderAll() {
+  renderSlots();
+  renderPickerGrid();
+  renderCommunitySection();
+}
+
+// ── Build permanent DOM structures ────────────────────────────────────────────
+
+function buildPickerGrid() {
+  const grid = document.getElementById('cardPickerGrid');
+  grid.innerHTML = '';
+
+  for (const suit of PICKER_SUITS) {
+    for (const rank of PICKER_RANKS) {
+      const cardStr = rank + suit.ch;
+      const cell = document.createElement('div');
+      cell.className = 'picker-cell ' + suit.cls;
+      cell.id = 'picker-' + cardStr;
+      const displayRank = rank === 'T' ? '10' : rank;
+      cell.innerHTML = `<span class="picker-rank">${displayRank}</span><span class="picker-suit">${suit.sym}</span>`;
+      cell.addEventListener('click', () => onPickerClick(cardStr));
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function buildBoardSlots() {
+  const container = document.getElementById('boardSlots');
+  container.innerHTML = '';
+
+  for (let i = 0; i < 5; i++) {
+    if (i === 3 || i === 4) {
+      const gap = document.createElement('div');
+      gap.className = 'board-slot-gap';
+      container.appendChild(gap);
+    }
+    const slot = document.createElement('div');
+    slot.className = 'board-slot';
+    slot.id = 'boardSlot' + i;
+    container.appendChild(slot);
+  }
+}
+
+// ── URL hash state ────────────────────────────────────────────────────────────
+
+function pushHash() {
+  const h1str = holeCards[0] && holeCards[1] ? holeCards[0] + holeCards[1] : '';
+  const h2str = holeCards[2] && holeCards[3] ? holeCards[2] + holeCards[3] : '';
+  const boardStr = boardCards.join('');
+
+  const parts = [];
+  if (h1str) parts.push(h1str);
+  if (h2str) parts.push(h2str);
+  if (boardStr) parts.push(boardStr);
+
+  const hash = parts.length > 0 ? '#' + parts.join('/') : '';
+  history.replaceState(null, '', hash || location.pathname);
+}
+
+function loadFromHash() {
+  const hash = location.hash.replace('#', '');
+  if (!hash) return;
+
+  const parts = hash.split('/');
+  const h1Cards    = parts[0] ? parseCardPairs(parts[0]) : [];
+  const h2Cards    = parts[1] ? parseCardPairs(parts[1]) : [];
+  const boardParsed = parts[2] ? parseCardPairs(parts[2]) : [];
+
+  // Validate: no duplicate cards
+  const all = [...h1Cards, ...h2Cards, ...boardParsed];
+  if (new Set(all).size !== all.length) return;
+
+  if (h1Cards[0]) holeCards[0] = h1Cards[0];
+  if (h1Cards[1]) holeCards[1] = h1Cards[1];
+  if (h2Cards[0]) holeCards[2] = h2Cards[0];
+  if (h2Cards[1]) holeCards[3] = h2Cards[1];
+  boardCards = boardParsed.slice(0, 5);
+
+  // Set activeSlot to first unfilled hole slot, then first available board slot
+  let next = null;
+  for (let i = 0; i < 4; i++) {
+    if (!holeCards[i]) { next = i; break; }
+  }
+  if (next === null && handsComplete()) {
+    next = boardCards.length < 5 ? 4 + boardCards.length : null;
+  }
+  activeSlot = next !== null ? next : (handsComplete() && boardCards.length === 5 ? null : 0);
+}
+
+window.addEventListener('hashchange', () => {
+  holeCards = [null, null, null, null];
+  boardCards = [];
+  activeSlot = 0;
+  preflopEquity = null;
+  loadFromHash();
+  renderAll();
+  updateEquityBar();
+  if (handsComplete()) fetchPreflopEquity();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+buildPickerGrid();
+buildBoardSlots();
 loadFromHash();
-updateToggleButtons();
-if (hand1 && hand2 && hand1 !== hand2) fetchAndShowEquity();
-else if (hand1 || hand2) renderGrid();
+renderAll();
+updateEquityBar();
+if (handsComplete()) fetchPreflopEquity();
+
 </script>
 </body>
 </html>
