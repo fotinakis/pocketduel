@@ -1,5 +1,7 @@
 # pocketduel
 
+https://pocketduel.com
+
 Texas Hold'em preflop equity calculator. Give it two hole card holdings and it tells you exactly how often each hand wins.
 
 Uses exhaustive enumeration over all 1,712,304 possible 5-card boards — no Monte Carlo approximation, just exact math.
