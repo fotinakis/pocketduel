@@ -242,8 +242,54 @@ const Postflop = (() => {
           total++;
         }
       }
+    } else if (needed === 3) {
+      // 2 board cards — enumerate C(remaining, 3) = ~15K combinations
+      const n = remaining.length;
+      for (let i = 0; i < n - 2; i++) {
+        seven1[4] = remaining[i];
+        seven2[4] = remaining[i];
+        for (let j = i + 1; j < n - 1; j++) {
+          seven1[5] = remaining[j];
+          seven2[5] = remaining[j];
+          for (let k = j + 1; k < n; k++) {
+            seven1[6] = remaining[k];
+            seven2[6] = remaining[k];
+            const s1 = eval7(seven1);
+            const s2 = eval7(seven2);
+            if (s1 > s2) wins1++;
+            else if (s1 < s2) wins2++;
+            else ties++;
+            total++;
+          }
+        }
+      }
+    } else if (needed === 4) {
+      // 1 board card — enumerate C(remaining, 4) = ~178K combinations
+      const n = remaining.length;
+      for (let i = 0; i < n - 3; i++) {
+        seven1[3] = remaining[i];
+        seven2[3] = remaining[i];
+        for (let j = i + 1; j < n - 2; j++) {
+          seven1[4] = remaining[j];
+          seven2[4] = remaining[j];
+          for (let k = j + 1; k < n - 1; k++) {
+            seven1[5] = remaining[k];
+            seven2[5] = remaining[k];
+            for (let l = k + 1; l < n; l++) {
+              seven1[6] = remaining[l];
+              seven2[6] = remaining[l];
+              const s1 = eval7(seven1);
+              const s2 = eval7(seven2);
+              if (s1 > s2) wins1++;
+              else if (s1 < s2) wins2++;
+              else ties++;
+              total++;
+            }
+          }
+        }
+      }
     } else {
-      // 3+ unknown cards — too many combinations for browser JS
+      // 5 unknown — too many combinations for browser JS
       return null;
     }
 
