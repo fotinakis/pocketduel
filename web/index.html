@@ -18,6 +18,10 @@
     --hand1-bg:  #1e3a5f;
     --hand2:     #f97316;
     --hand2-bg:  #3d1f0a;
+    --hand3:     #22c55e;
+    --hand3-bg:  #0a3d1f;
+    --hand4:     #a855f7;
+    --hand4-bg:  #2d1a4e;
     --red-suit:  #ef4444;
     --card-bg:   #f0ede8;
     --card-text: #111111;
@@ -95,11 +99,18 @@
 
   .hand-group {
     display: flex;
+    position: relative;
   }
 
   .hole-cards-row {
     display: flex;
     gap: 6px;
+  }
+
+  .vs-separator {
+    display: flex;
+    align-items: center;
+    position: relative;
   }
 
   .vs-text {
@@ -130,9 +141,11 @@
     position: relative;
   }
 
-  /* Subtle color hint: left pair = hand1, right pair = hand2 */
-  #handGroup1 .hole-slot { border-color: #3a5888; color: #5a78b8; }
-  #handGroup2 .hole-slot { border-color: #703820; color: #a05030; }
+  /* Subtle color hint per hand */
+  [data-hand="1"] .hole-slot { border-color: #3a5888; color: #5a78b8; }
+  [data-hand="2"] .hole-slot { border-color: #703820; color: #a05030; }
+  [data-hand="3"] .hole-slot { border-color: #1a5c35; color: #30a855; }
+  [data-hand="4"] .hole-slot { border-color: #4a2080; color: #8055d0; }
 
   .hole-slot.slot-active {
     border: 2.5px solid var(--active) !important;
@@ -281,13 +294,19 @@
     background: var(--surface);
   }
 
+  .equity-bar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
   .equity-bar .stage-label {
     color: var(--muted);
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin-bottom: 6px;
     transition: opacity 0.2s;
     min-height: 1em;
   }
@@ -307,9 +326,10 @@
 
   .split-bar { display: flex; height: 100%; }
 
-  .bar-h1  { background: var(--hand1); transition: width 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-  .bar-h2  { background: var(--hand2); transition: width 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-  .bar-tie { background: #44445a;      transition: width 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+  .bar-segment {
+    transition: width 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    height: 100%;
+  }
 
   .bar-labels {
     display: flex;
@@ -319,20 +339,27 @@
     min-height: 1em;
   }
 
-  .pct-h1 {
-    color: var(--hand1);
+  .pct-label {
     font-size: clamp(16px, 3.5vw, 24px);
     font-weight: 700;
     transition: opacity 0.2s;
     min-width: 4ch;
   }
-  .pct-h2 {
-    color: var(--hand2);
-    font-size: clamp(16px, 3.5vw, 24px);
-    font-weight: 700;
+
+  /* 2-way: last label right-aligned */
+  .bar-labels:not(.nway) .pct-label:last-child {
     text-align: right;
-    transition: opacity 0.2s;
-    min-width: 4ch;
+  }
+
+  /* N-way: evenly distributed, slightly smaller */
+  .bar-labels.nway {
+    justify-content: space-around;
+  }
+
+  .bar-labels.nway .pct-label {
+    font-size: clamp(13px, 2.8vw, 18px);
+    text-align: center;
+    flex: 1;
   }
 
   .splits-line {
@@ -392,7 +419,6 @@
   .picker-cell.suit-red   { color: var(--red-suit); }
   .picker-cell.suit-black { color: #c0c8d8; }
 
-  /* Used cards in picker: fully disabled — only the display area allows deselect */
   .picker-cell.picker-disabled {
     opacity: 0.16;
     cursor: default;
@@ -400,14 +426,126 @@
   }
 
   /* ── Hand-group color underlines ── */
-  #handGroup1 {
+  [data-hand="1"] {
     border-bottom: 3px solid var(--hand1);
     padding-bottom: 6px;
   }
 
-  #handGroup2 {
+  [data-hand="2"] {
     border-bottom: 3px solid var(--hand2);
     padding-bottom: 6px;
+  }
+
+  [data-hand="3"] {
+    border-bottom: 3px solid var(--hand3);
+    padding-bottom: 6px;
+  }
+
+  [data-hand="4"] {
+    border-bottom: 3px solid var(--hand4);
+    padding-bottom: 6px;
+  }
+
+  /* ── Add / remove player buttons ── */
+  .add-player-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px dashed var(--empty-border);
+    background: transparent;
+    color: var(--empty-color);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    align-self: center;
+    flex-shrink: 0;
+  }
+
+  .add-player-btn:hover {
+    border-color: var(--active);
+    color: var(--active);
+  }
+
+  .remove-player-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #333;
+    color: #999;
+    border: 1px solid #555;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    padding: 0;
+  }
+
+  .remove-player-btn:hover {
+    background: #c53030;
+    color: white;
+    border-color: #c53030;
+  }
+
+  /* ── Monte Carlo info ── */
+  .mc-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+  }
+
+  .mc-margin {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .mc-icon {
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .mc-icon:hover {
+    color: var(--text);
+  }
+
+  .mc-popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    background: var(--surface2);
+    border: 1px solid #3a3a6a;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.5;
+    width: 260px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    z-index: 200;
+    display: none;
+  }
+
+  /* ── Multi-way hands on mobile ── */
+  .hands-display.multi-way {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .hands-display.multi-way .vs-text {
+    font-size: clamp(14px, 3.5vmin, 20px);
+    padding: 0 4px;
   }
 
   /* ── Mobile layout ── */
@@ -492,6 +630,27 @@
     .equity-bar {
       padding: 12px 28px;
     }
+
+    /* Multi-way stays horizontal on desktop but uses smaller cards */
+    .hands-display.multi-way {
+      flex-direction: row;
+      gap: 8px;
+    }
+
+    .hands-display.multi-way .hole-slot {
+      width: clamp(38px, 5.5vw, 56px);
+      height: clamp(54px, 7.8vw, 78px);
+    }
+
+    .hands-display.multi-way .card {
+      width: clamp(38px, 5.5vw, 56px);
+      height: clamp(54px, 7.8vw, 78px);
+    }
+
+    .hands-display.multi-way .vs-text {
+      font-size: clamp(16px, 2.5vw, 24px);
+      padding: 0 3px;
+    }
   }
 </style>
 </head>
@@ -507,24 +666,8 @@
 <div class="main-section">
   <div class="matchup-scroll" id="matchupScroll">
 
-    <!-- Hole cards display -->
-    <div class="hands-display" id="handsDisplay">
-      <div class="hand-group" id="handGroup1">
-        <div class="hole-cards-row">
-          <div class="hole-slot slot-active" id="holeSlot0"></div>
-          <div class="hole-slot" id="holeSlot1"></div>
-        </div>
-      </div>
-
-      <div class="vs-text">vs</div>
-
-      <div class="hand-group" id="handGroup2">
-        <div class="hole-cards-row">
-          <div class="hole-slot" id="holeSlot2"></div>
-          <div class="hole-slot" id="holeSlot3"></div>
-        </div>
-      </div>
-    </div>
+    <!-- Hole cards display (built dynamically by JS) -->
+    <div class="hands-display" id="handsDisplay"></div>
 
     <!-- Community cards: shown when hands complete or board has any card -->
     <div class="community-section" id="communitySection" style="display:none">
@@ -533,30 +676,17 @@
 
   </div>
 
-  <!-- Equity bar: always visible, always same height -->
-  <div class="equity-bar disabled" id="equityBar">
-    <div class="stage-label" id="equityStageLabel">Select hole cards to see equity</div>
-    <div class="equity-section">
-      <div class="split-bar-wrap">
-        <div class="split-bar">
-          <div class="bar-h1" id="barH1" style="width:0%"></div>
-          <div class="bar-h2" id="barH2" style="width:0%"></div>
-          <div class="bar-tie" id="barTie" style="width:100%"></div>
-        </div>
-      </div>
-      <div class="bar-labels">
-        <div class="pct-h1" id="pctH1"></div>
-        <div class="pct-h2" id="pctH2"></div>
-      </div>
-      <div class="splits-line" id="splitsLine"></div>
-    </div>
-  </div>
+  <!-- Equity bar: always visible, built dynamically by JS -->
+  <div class="equity-bar disabled" id="equityBar"></div>
 </div>
 
 <script src="postflop.js"></script>
+<script src="montecarlo.js"></script>
 <script>
 
 // ── Constants ───────────────────────────────────────────────────────────────
+
+const BOARD_OFFSET = 8; // activeSlot values 8-12 = board slots 0-4
 
 const PICKER_RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
 const PICKER_SUITS = [
@@ -567,11 +697,15 @@ const PICKER_SUITS = [
 ];
 
 const SUIT_MAP = {
-  h: { sym: '♥', cls: 'red'   },
-  d: { sym: '♦', cls: 'red'   },
-  c: { sym: '♣', cls: 'black' },
-  s: { sym: '♠', cls: 'black' },
+  h: { sym: '\u2665', cls: 'red'   },
+  d: { sym: '\u2666', cls: 'red'   },
+  c: { sym: '\u2663', cls: 'black' },
+  s: { sym: '\u2660', cls: 'black' },
 };
+
+const HAND_COLORS = [
+  'var(--hand1)', 'var(--hand2)', 'var(--hand3)', 'var(--hand4)'
+];
 
 function buildHandOrder() {
   const order = [];
@@ -589,15 +723,20 @@ const HAND_TYPE_ORDER = buildHandOrder();
 
 // ── State ───────────────────────────────────────────────────────────────────
 
-let holeCards  = [null, null, null, null];
+let numPlayers = 2;
+let holeCards  = [null, null, null, null, null, null, null, null]; // max 4 players × 2
 let boardCards = [null, null, null, null, null]; // sparse 5-slot array
-let activeSlot = 0;   // 0-3=hole, 4-8=board slot, null=all done
-let preflopEquity = null;
+let activeSlot = 0;   // 0-7=hole, 8-12=board slot, null=all done
+let preflopEquity = null; // 2-way preflop JSON data
+let currentMCId = null;   // active Monte Carlo run ID
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function handsComplete() {
-  return holeCards.every(c => c !== null);
+  for (let i = 0; i < numPlayers * 2; i++) {
+    if (!holeCards[i]) return false;
+  }
+  return true;
 }
 
 function activeBoardCards() {
@@ -606,20 +745,44 @@ function activeBoardCards() {
 
 function getAllUsedCards() {
   const used = new Set();
-  for (const c of holeCards) { if (c) used.add(c); }
+  for (let i = 0; i < numPlayers * 2; i++) {
+    if (holeCards[i]) used.add(holeCards[i]);
+  }
   for (const c of boardCards) { if (c) used.add(c); }
   return used;
+}
+
+function findFirstEmptyHoleSlot() {
+  for (let i = 0; i < numPlayers * 2; i++) {
+    if (!holeCards[i]) return i;
+  }
+  return null;
 }
 
 // Find next empty board slot, searching from afterBoardIdx+1 then wrapping.
 function nextEmptyBoardSlot(afterBoardIdx) {
   for (let i = afterBoardIdx + 1; i < 5; i++) {
-    if (!boardCards[i]) return 4 + i;
+    if (!boardCards[i]) return BOARD_OFFSET + i;
   }
   for (let i = 0; i <= afterBoardIdx; i++) {
-    if (!boardCards[i]) return 4 + i;
+    if (!boardCards[i]) return BOARD_OFFSET + i;
   }
   return null; // all 5 filled
+}
+
+function getActiveHands() {
+  const hands = [];
+  for (let p = 0; p < numPlayers; p++) {
+    hands.push([holeCards[p * 2], holeCards[p * 2 + 1]]);
+  }
+  return hands;
+}
+
+function getStageLabel() {
+  const n = activeBoardCards().length;
+  if (n === 0) return 'Pre-flop';
+  const labels = { 1: '1 Card', 2: '2 Cards', 3: 'Flop', 4: 'Turn', 5: 'River' };
+  return labels[n] || '';
 }
 
 function cardsToHandType(c1, c2) {
@@ -635,6 +798,13 @@ function getMatchupInfo(ht1, ht2) {
   const i2 = HAND_TYPE_ORDER.indexOf(ht2);
   if (i1 <= i2) return { file: `equity_data/${ht1}_vs_${ht2}.json`, swapped: false };
   return { file: `equity_data/${ht2}_vs_${ht1}.json`, swapped: true };
+}
+
+function cancelMC() {
+  if (currentMCId !== null) {
+    Multiway.cancel();
+    currentMCId = null;
+  }
 }
 
 // ── Card rendering ───────────────────────────────────────────────────────────
@@ -655,6 +825,104 @@ function renderCard(token) {
   return div;
 }
 
+// ── Build dynamic hand groups ────────────────────────────────────────────────
+
+function buildHandsDisplay() {
+  const container = document.getElementById('handsDisplay');
+  container.innerHTML = '';
+  container.className = 'hands-display' + (numPlayers > 2 ? ' multi-way' : '');
+
+  for (let p = 0; p < numPlayers; p++) {
+    if (p > 0) {
+      const vs = document.createElement('div');
+      vs.className = 'vs-separator';
+      const vsText = document.createElement('span');
+      vsText.className = 'vs-text';
+      vsText.textContent = 'vs';
+      vs.appendChild(vsText);
+      container.appendChild(vs);
+    }
+
+    const group = document.createElement('div');
+    group.className = 'hand-group';
+    group.id = 'handGroup' + (p + 1);
+    group.dataset.hand = String(p + 1);
+
+    // Remove button on last player (only if >2 players)
+    if (p === numPlayers - 1 && numPlayers > 2) {
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-player-btn';
+      removeBtn.textContent = '\u00d7';
+      removeBtn.title = 'Remove player';
+      removeBtn.onclick = removePlayer;
+      group.appendChild(removeBtn);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'hole-cards-row';
+    for (let c = 0; c < 2; c++) {
+      const slot = document.createElement('div');
+      slot.className = 'hole-slot';
+      slot.id = 'holeSlot' + (p * 2 + c);
+      row.appendChild(slot);
+    }
+    group.appendChild(row);
+    container.appendChild(group);
+  }
+
+  // Add player button (up to 4)
+  if (numPlayers < 4) {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-player-btn';
+    addBtn.textContent = '+';
+    addBtn.title = 'Add player';
+    addBtn.onclick = addPlayer;
+    container.appendChild(addBtn);
+  }
+}
+
+// ── Add / remove players ─────────────────────────────────────────────────────
+
+function addPlayer() {
+  if (numPlayers >= 4) return;
+  numPlayers++;
+  cancelMC();
+  preflopEquity = null;
+
+  // Active slot → first empty hole slot (the new player's first slot)
+  activeSlot = findFirstEmptyHoleSlot();
+
+  buildHandsDisplay();
+  buildEquityBar();
+  renderAll();
+  updateEquityBar();
+  pushHash();
+}
+
+function removePlayer() {
+  if (numPlayers <= 2) return;
+  const removedStart = (numPlayers - 1) * 2;
+  holeCards[removedStart] = null;
+  holeCards[removedStart + 1] = null;
+  numPlayers--;
+  cancelMC();
+  preflopEquity = null;
+
+  // Adjust activeSlot if it was on removed player's slots
+  if (activeSlot !== null && activeSlot >= removedStart && activeSlot < removedStart + 2) {
+    activeSlot = findFirstEmptyHoleSlot();
+    if (activeSlot === null) activeSlot = nextEmptyBoardSlot(-1);
+  }
+
+  buildHandsDisplay();
+  buildEquityBar();
+  renderAll();
+  updateEquityBar();
+  pushHash();
+
+  if (numPlayers === 2 && handsComplete()) fetchPreflopEquity();
+}
+
 // ── Slot actions ─────────────────────────────────────────────────────────────
 
 function setActiveSlot(i) {
@@ -666,6 +934,7 @@ function setActiveSlot(i) {
 function clearHoleSlot(i) {
   holeCards[i] = null;
   activeSlot = i;
+  cancelMC();
   preflopEquity = null;
   // Keep boardCards — community section stays visible but dimmed
   renderAll();
@@ -675,7 +944,8 @@ function clearHoleSlot(i) {
 
 function clearBoardSlot(i) {
   boardCards[i] = null;
-  activeSlot = 4 + i;
+  activeSlot = BOARD_OFFSET + i;
+  cancelMC();
   renderSlots();
   renderPickerGrid();
   updateEquityBar();
@@ -687,27 +957,25 @@ function clearBoardSlot(i) {
 function onPickerClick(cardStr) {
   if (activeSlot === null) return;
 
-  if (activeSlot >= 0 && activeSlot <= 3) {
+  if (activeSlot < numPlayers * 2) {
+    // Hole card
     holeCards[activeSlot] = cardStr;
 
-    let nextHole = null;
-    for (let i = 0; i < 4; i++) {
-      if (!holeCards[i]) { nextHole = i; break; }
-    }
-
+    const nextHole = findFirstEmptyHoleSlot();
     if (nextHole !== null) {
       activeSlot = nextHole;
     } else {
       // All hole cards filled → go to first empty board slot
       activeSlot = nextEmptyBoardSlot(-1);
-      fetchPreflopEquity();
+      if (numPlayers === 2) fetchPreflopEquity();
     }
 
     renderAll();
+    updateEquityBar();
     pushHash();
 
-  } else if (activeSlot >= 4 && activeSlot <= 8) {
-    const boardIdx = activeSlot - 4;
+  } else if (activeSlot >= BOARD_OFFSET && activeSlot < BOARD_OFFSET + 5) {
+    const boardIdx = activeSlot - BOARD_OFFSET;
     boardCards[boardIdx] = cardStr;
     activeSlot = nextEmptyBoardSlot(boardIdx);
     renderSlots();
@@ -717,10 +985,10 @@ function onPickerClick(cardStr) {
   }
 }
 
-// ── Equity fetch ──────────────────────────────────────────────────────────────
+// ── 2-way preflop equity fetch ───────────────────────────────────────────────
 
 async function fetchPreflopEquity() {
-  if (!handsComplete()) return;
+  if (numPlayers !== 2 || !handsComplete()) return;
 
   const ht1 = cardsToHandType(holeCards[0], holeCards[1]);
   const ht2 = cardsToHandType(holeCards[2], holeCards[3]);
@@ -742,14 +1010,24 @@ async function fetchPreflopEquity() {
   }
 }
 
-// ── Equity bar ────────────────────────────────────────────────────────────────
+// ── Equity bar — routing ─────────────────────────────────────────────────────
 
 function updateEquityBar() {
   if (!handsComplete()) {
+    cancelMC();
     setEquityDisabled('Select hole cards to see equity');
     return;
   }
 
+  if (numPlayers === 2) {
+    cancelMC();
+    update2WayEquity();
+  } else {
+    updateNWayEquity();
+  }
+}
+
+function update2WayEquity() {
   const board = activeBoardCards();
 
   if (board.length === 0) {
@@ -758,7 +1036,7 @@ function updateEquityBar() {
       return;
     }
     const { pct1, pct2, tiePct, total } = preflopEquity;
-    setEquityEnabled('Pre-flop', pct1, pct2, tiePct, total);
+    setEquity2Way('Pre-flop', pct1, pct2, tiePct, total);
     return;
   }
 
@@ -771,42 +1049,118 @@ function updateEquityBar() {
   }
 
   const { pct1, pct2, tiePct, total } = result;
-  const stageLabels = { 1: '1 Card', 2: '2 Cards', 3: 'Flop', 4: 'Turn', 5: 'River' };
-  setEquityEnabled(stageLabels[board.length] || '', pct1, pct2, tiePct, total);
+  const labels = { 1: '1 Card', 2: '2 Cards', 3: 'Flop', 4: 'Turn', 5: 'River' };
+  setEquity2Way(labels[board.length] || '', pct1, pct2, tiePct, total);
 }
+
+function updateNWayEquity() {
+  const board = activeBoardCards();
+  const hands = getActiveHands();
+  const needed = 5 - board.length;
+  const stage = getStageLabel();
+
+  cancelMC();
+
+  if (needed <= 2) {
+    // Exact N-way enumeration
+    const result = Multiway.calculateExact(hands, board);
+    setEquityNWay(stage, result.equities, result.splitPct, result.total, result.margin, result.isExact, result.done);
+  } else {
+    // Monte Carlo
+    setEquityDisabled('Estimating\u2026');
+    currentMCId = Multiway.run(hands, board, function(update) {
+      setEquityNWay(stage, update.equities, update.splitPct, update.total, update.margin, update.isExact, update.done);
+    });
+  }
+}
+
+// ── Equity bar — rendering ───────────────────────────────────────────────────
 
 function setEquityDisabled(msg) {
   document.getElementById('equityBar').classList.add('disabled');
   document.getElementById('equityStageLabel').textContent = msg;
-  document.getElementById('barH1').style.width = '0%';
-  document.getElementById('barH2').style.width = '0%';
-  document.getElementById('barTie').style.width = '100%';
-}
 
-function setEquityEnabled(stageLabel, pct1, pct2, tiePct, total) {
-  document.getElementById('equityBar').classList.remove('disabled');
-
-  const labelEl = document.getElementById('equityStageLabel');
-  if (labelEl.textContent !== stageLabel) {
-    labelEl.style.opacity = '0.3';
-    requestAnimationFrame(() => {
-      labelEl.textContent = stageLabel;
-      labelEl.style.opacity = '';
-    });
+  for (let i = 0; i < numPlayers; i++) {
+    const seg = document.getElementById('barSeg' + i);
+    if (seg) seg.style.width = '0%';
   }
 
-  document.getElementById('barH1').style.width = pct1 + '%';
-  document.getElementById('barH2').style.width = pct2 + '%';
+  const tie = document.getElementById('barTie');
+  if (tie) tie.style.width = '100%';
+
+  const mcInfo = document.getElementById('mcInfo');
+  if (mcInfo) mcInfo.style.display = 'none';
+}
+
+function setEquity2Way(stage, pct1, pct2, tiePct, total) {
+  document.getElementById('equityBar').classList.remove('disabled');
+
+  updateStageLabel(stage);
+
+  document.getElementById('barSeg0').style.width = pct1 + '%';
+  document.getElementById('barSeg1').style.width = pct2 + '%';
   document.getElementById('barTie').style.width = tiePct + '%';
 
-  flashUpdate('pctH1', pct1.toFixed(2) + '%');
-  flashUpdate('pctH2', pct2.toFixed(2) + '%');
+  flashUpdate('pctLabel0', pct1.toFixed(2) + '%');
+  flashUpdate('pctLabel1', pct2.toFixed(2) + '%');
 
   const splitsEl = document.getElementById('splitsLine');
   if (activeBoardCards().length === 5) {
     splitsEl.textContent = 'Final board';
   } else {
-    splitsEl.textContent = `Split: ${tiePct.toFixed(2)}% \u00b7 ${total.toLocaleString()} possible board${total !== 1 ? 's' : ''}`;
+    splitsEl.textContent = `Split: ${tiePct.toFixed(2)}% \u00b7 ${total.toLocaleString()} possible boards`;
+  }
+
+  const mcInfo = document.getElementById('mcInfo');
+  if (mcInfo) mcInfo.style.display = 'none';
+}
+
+function setEquityNWay(stage, equities, splitPct, total, margin, isExact, done) {
+  document.getElementById('equityBar').classList.remove('disabled');
+
+  updateStageLabel(stage);
+
+  // Update bar segments
+  for (let i = 0; i < numPlayers; i++) {
+    const seg = document.getElementById('barSeg' + i);
+    if (seg) seg.style.width = equities[i] + '%';
+  }
+
+  // Update percentage labels
+  const prefix = isExact ? '' : '~';
+  for (let i = 0; i < numPlayers; i++) {
+    flashUpdate('pctLabel' + i, prefix + equities[i].toFixed(1) + '%');
+  }
+
+  // Splits line
+  const splitsEl = document.getElementById('splitsLine');
+  if (isExact) {
+    if (activeBoardCards().length === 5) {
+      splitsEl.textContent = 'Final board';
+    } else {
+      splitsEl.textContent = `Split: ${splitPct.toFixed(1)}% \u00b7 ${total.toLocaleString()} possible boards`;
+    }
+  } else {
+    const progress = done ? '' : '\u2026';
+    splitsEl.textContent = `${total.toLocaleString()} samples${progress} \u00b7 \u00b1${margin.toFixed(2)}%`;
+  }
+
+  // MC info
+  const mcInfo = document.getElementById('mcInfo');
+  if (mcInfo) {
+    mcInfo.style.display = isExact ? 'none' : '';
+  }
+}
+
+function updateStageLabel(text) {
+  const el = document.getElementById('equityStageLabel');
+  if (!el) return;
+  if (el.textContent !== text) {
+    el.style.opacity = '0.3';
+    requestAnimationFrame(() => {
+      el.textContent = text;
+      el.style.opacity = '';
+    });
   }
 }
 
@@ -823,7 +1177,8 @@ function flashUpdate(id, newText) {
 // ── Render functions ──────────────────────────────────────────────────────────
 
 function renderSlots() {
-  for (let i = 0; i < 4; i++) {
+  // Hole slots
+  for (let i = 0; i < numPlayers * 2; i++) {
     const el = document.getElementById('holeSlot' + i);
     if (!el) continue;
 
@@ -845,13 +1200,14 @@ function renderSlots() {
     }
   }
 
+  // Board slots
   const handsOk = handsComplete();
   for (let i = 0; i < 5; i++) {
     const el = document.getElementById('boardSlot' + i);
     if (!el) continue;
 
     const card = boardCards[i];
-    const isActive = activeSlot === 4 + i;
+    const isActive = activeSlot === BOARD_OFFSET + i;
 
     el.className = 'board-slot';
     if (isActive && handsOk) el.classList.add('slot-active');
@@ -864,9 +1220,8 @@ function renderSlots() {
       if (handsOk) el.onclick = () => clearBoardSlot(i);
     } else if (handsOk) {
       el.textContent = isActive ? '' : '+';
-      el.onclick = () => setActiveSlot(4 + i);
+      el.onclick = () => setActiveSlot(BOARD_OFFSET + i);
     }
-    // !handsOk && !card: empty slot, no text — dimmed by parent .community-section.dimmed
   }
 }
 
@@ -941,11 +1296,121 @@ function buildBoardSlots() {
   }
 }
 
+function buildEquityBar() {
+  const bar = document.getElementById('equityBar');
+  bar.className = 'equity-bar disabled';
+  bar.innerHTML = '';
+
+  // Header: stage label + MC info
+  const header = document.createElement('div');
+  header.className = 'equity-bar-header';
+
+  const stageLabel = document.createElement('div');
+  stageLabel.className = 'stage-label';
+  stageLabel.id = 'equityStageLabel';
+  stageLabel.textContent = 'Select hole cards to see equity';
+  header.appendChild(stageLabel);
+
+  const mcInfo = document.createElement('div');
+  mcInfo.className = 'mc-info';
+  mcInfo.id = 'mcInfo';
+  mcInfo.style.display = 'none';
+
+  const mcMargin = document.createElement('span');
+  mcMargin.className = 'mc-margin';
+  mcMargin.id = 'mcMargin';
+  mcInfo.appendChild(mcMargin);
+
+  const mcIcon = document.createElement('span');
+  mcIcon.className = 'mc-icon';
+  mcIcon.id = 'mcIcon';
+  mcIcon.textContent = '\u24d8';
+  mcIcon.title = 'Monte Carlo estimation';
+  mcInfo.appendChild(mcIcon);
+
+  const mcPopover = document.createElement('div');
+  mcPopover.className = 'mc-popover';
+  mcPopover.id = 'mcPopover';
+  mcPopover.textContent = 'Equity estimated via Monte Carlo simulation (50,000 random boards). Results are approximate \u2014 see margin of error. Heads-up (2-player) matchups always use exact calculation.';
+  mcInfo.appendChild(mcPopover);
+
+  header.appendChild(mcInfo);
+  bar.appendChild(header);
+
+  // Equity section
+  const section = document.createElement('div');
+  section.className = 'equity-section';
+
+  // Split bar
+  const barWrap = document.createElement('div');
+  barWrap.className = 'split-bar-wrap';
+  const splitBar = document.createElement('div');
+  splitBar.className = 'split-bar';
+  splitBar.id = 'splitBar';
+
+  for (let i = 0; i < numPlayers; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'bar-segment';
+    seg.id = 'barSeg' + i;
+    seg.style.width = '0%';
+    seg.style.background = HAND_COLORS[i];
+    splitBar.appendChild(seg);
+  }
+
+  // Tie bar only for 2-way
+  if (numPlayers === 2) {
+    const tie = document.createElement('div');
+    tie.className = 'bar-segment';
+    tie.id = 'barTie';
+    tie.style.width = '100%';
+    tie.style.background = '#44445a';
+    splitBar.appendChild(tie);
+  }
+
+  barWrap.appendChild(splitBar);
+  section.appendChild(barWrap);
+
+  // Bar labels
+  const labels = document.createElement('div');
+  labels.className = 'bar-labels' + (numPlayers > 2 ? ' nway' : '');
+  labels.id = 'barLabels';
+
+  for (let i = 0; i < numPlayers; i++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'pct-label';
+    lbl.id = 'pctLabel' + i;
+    lbl.style.color = HAND_COLORS[i];
+    labels.appendChild(lbl);
+  }
+
+  section.appendChild(labels);
+
+  // Splits line
+  const splitsLine = document.createElement('div');
+  splitsLine.className = 'splits-line';
+  splitsLine.id = 'splitsLine';
+  section.appendChild(splitsLine);
+
+  bar.appendChild(section);
+
+  // Set up MC popover toggle
+  mcIcon.addEventListener('click', function(e) {
+    e.stopPropagation();
+    mcPopover.style.display = mcPopover.style.display === 'none' ? '' : 'none';
+  });
+}
+
+// Close MC popover on outside click
+document.addEventListener('click', function() {
+  const pop = document.getElementById('mcPopover');
+  if (pop) pop.style.display = 'none';
+});
+
 // ── URL hash state ────────────────────────────────────────────────────────────
-// Format: #<h1>/<h2>[/<board>]
-// Each card slot: 2-char token (e.g. "Ah") or "x" for unknown/empty.
-// h1, h2: always 2 slots.  board: always 5 slots (if section present).
-// Example: #AhKs/QdJc/7cxx8sxx  (board slots 0=7c, 1=empty, 2=8s, 3-4=empty)
+// Format: #h1/h2[/h3[/h4]][:board]
+// Each hand: 2 cards as 2-char tokens or "x" for empty.
+// Board: 5 slots, 2-char tokens or "x".
+// Legacy (2-player): #h1/h2/board (no colon) also supported for loading.
 
 function encodeSlots(slots) {
   return slots.map(c => c || 'x').join('');
@@ -971,64 +1436,101 @@ function parseSlotTokens(str, count) {
 }
 
 function pushHash() {
-  const anyHole  = holeCards.some(c => c);
+  const anyHole  = holeCards.slice(0, numPlayers * 2).some(c => c);
   const anyBoard = boardCards.some(c => c);
   if (!anyHole && !anyBoard) {
     history.replaceState(null, '', location.pathname);
     return;
   }
-  const h1 = encodeSlots([holeCards[0], holeCards[1]]);
-  const h2 = encodeSlots([holeCards[2], holeCards[3]]);
-  const parts = [h1, h2];
-  if (anyBoard) parts.push(encodeSlots(boardCards));
-  history.replaceState(null, '', '#' + parts.join('/'));
+
+  const handParts = [];
+  for (let p = 0; p < numPlayers; p++) {
+    handParts.push(encodeSlots([holeCards[p * 2], holeCards[p * 2 + 1]]));
+  }
+
+  let hash = handParts.join('/');
+  if (anyBoard) hash += ':' + encodeSlots(boardCards);
+  history.replaceState(null, '', '#' + hash);
 }
 
 function loadFromHash() {
   const hash = location.hash.replace('#', '');
   if (!hash) return;
 
-  const parts   = hash.split('/');
-  const h1slots = parseSlotTokens(parts[0] || '', 2);
-  const h2slots = parseSlotTokens(parts[1] || '', 2);
-  const bslots  = parseSlotTokens(parts[2] || '', 5);
+  let handsPart, boardPart;
+  if (hash.includes(':')) {
+    const colonIdx = hash.indexOf(':');
+    handsPart = hash.slice(0, colonIdx);
+    boardPart = hash.slice(colonIdx + 1);
+  } else {
+    // Legacy 2-player format: #h1/h2/board
+    const parts = hash.split('/');
+    if (parts.length === 3 && parts[2].length >= 5) {
+      handsPart = parts[0] + '/' + parts[1];
+      boardPart = parts[2];
+    } else {
+      handsPart = hash;
+      boardPart = '';
+    }
+  }
+
+  const handParts = handsPart.split('/');
+  const np = Math.min(Math.max(handParts.length, 2), 4);
+  numPlayers = np;
+
+  holeCards = [null, null, null, null, null, null, null, null];
+  for (let p = 0; p < np; p++) {
+    const slots = parseSlotTokens(handParts[p] || '', 2);
+    holeCards[p * 2] = slots[0];
+    holeCards[p * 2 + 1] = slots[1];
+  }
+
+  boardCards = parseSlotTokens(boardPart || '', 5);
 
   // Reject duplicate cards
-  const all = [...h1slots, ...h2slots, ...bslots].filter(c => c);
-  if (new Set(all).size !== all.length) return;
-
-  holeCards  = [...h1slots, ...h2slots];
-  boardCards = bslots;
+  const all = [...holeCards.slice(0, np * 2), ...boardCards].filter(c => c);
+  if (new Set(all).size !== all.length) {
+    holeCards = [null, null, null, null, null, null, null, null];
+    boardCards = [null, null, null, null, null];
+    numPlayers = 2;
+    return;
+  }
 
   // Derive activeSlot: first empty hole slot, then first empty board slot
-  const holeEmpty = holeCards.findIndex(c => !c);
-  if (holeEmpty !== -1) {
-    activeSlot = holeEmpty;
-  } else if (handsComplete()) {
+  const firstEmptyHole = findFirstEmptyHoleSlot();
+  if (firstEmptyHole !== null) {
+    activeSlot = firstEmptyHole;
+  } else {
     const boardEmpty = boardCards.findIndex(c => !c);
-    activeSlot = boardEmpty === -1 ? null : 4 + boardEmpty;
+    activeSlot = boardEmpty === -1 ? null : BOARD_OFFSET + boardEmpty;
   }
 }
 
-window.addEventListener('hashchange', () => {
-  holeCards  = [null, null, null, null];
+window.addEventListener('hashchange', function() {
+  holeCards  = [null, null, null, null, null, null, null, null];
   boardCards = [null, null, null, null, null];
   activeSlot = 0;
+  numPlayers = 2;
   preflopEquity = null;
+  cancelMC();
   loadFromHash();
+  buildHandsDisplay();
+  buildEquityBar();
   renderAll();
   updateEquityBar();
-  if (handsComplete()) fetchPreflopEquity();
+  if (numPlayers === 2 && handsComplete()) fetchPreflopEquity();
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
+loadFromHash();
 buildPickerGrid();
 buildBoardSlots();
-loadFromHash();
+buildHandsDisplay();
+buildEquityBar();
 renderAll();
 updateEquityBar();
-if (handsComplete()) fetchPreflopEquity();
+if (numPlayers === 2 && handsComplete()) fetchPreflopEquity();
 
 </script>
 </body>
