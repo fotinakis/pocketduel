@@ -6,7 +6,7 @@ A Texas Hold'em equity calculator for the browser. Pick 2–4 hole card holdings
 
 ## Goal
 
-The goal is a fast, accurate, zero-dependency poker equity tool that works on any device without an account, a download, or a server. Everything runs client-side in plain JavaScript.
+The goal is a fast, accurate, zero-dependency poker equity tool that works on any device without an account, a download, or a backend. Everything runs client-side in plain JavaScript.
 
 ## Architecture
 
