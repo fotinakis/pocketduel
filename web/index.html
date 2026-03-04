@@ -334,9 +334,10 @@
   .bar-labels {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: flex-start;
     margin-top: 5px;
     min-height: 1em;
+    position: relative;
   }
 
   .pct-label {
@@ -344,11 +345,11 @@
     font-weight: 700;
     transition: opacity 0.2s;
     min-width: 4ch;
-  }
-
-  /* 2-way: last label right-aligned */
-  .bar-labels:not(.nway) .pct-label:last-child {
-    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    user-select: none;
   }
 
   /* N-way: evenly distributed, slightly smaller */
@@ -358,8 +359,34 @@
 
   .bar-labels.nway .pct-label {
     font-size: clamp(13px, 2.8vw, 18px);
-    text-align: center;
+    align-items: center;
     flex: 1;
+  }
+
+  .pct-split {
+    display: block;
+    font-size: 0.55em;
+    font-weight: 400;
+    color: var(--muted);
+    line-height: 1.3;
+    min-height: 1.3em; /* always reserve space to prevent layout shifts */
+  }
+
+  .player-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    background: var(--surface2);
+    border: 1px solid #3a3a6a;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.9;
+    min-width: 140px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    z-index: 200;
+    pointer-events: none;
+    transform: translateX(-50%);
   }
 
   .splits-line {
@@ -769,6 +796,7 @@ let boardCards = [null, null, null, null, null]; // sparse 5-slot array
 let activeSlot = 0;   // 0-7=hole, 8-12=board slot, null=all done
 let preflopEquity = null; // 2-way preflop JSON data
 let currentMCId = null;   // active Monte Carlo run ID
+let currentBreakdown = []; // [{equity, win, splitFreq, lose}, ...] per player
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -1105,12 +1133,12 @@ function updateNWayEquity() {
   if (needed <= 2) {
     // Exact N-way enumeration
     const result = Multiway.calculateExact(hands, board);
-    setEquityNWay(stage, result.equities, result.splitPct, result.total, result.margin, result.isExact, result.done);
+    setEquityNWay(stage, result.equities, result.splitEquities, result.splitFreqs, result.total, result.margin, result.isExact, result.done);
   } else {
     // Monte Carlo
     setEquityDisabled('Estimating\u2026');
     currentMCId = Multiway.run(hands, board, function(update) {
-      setEquityNWay(stage, update.equities, update.splitPct, update.total, update.margin, update.isExact, update.done);
+      setEquityNWay(stage, update.equities, update.splitEquities, update.splitFreqs, update.total, update.margin, update.isExact, update.done);
     });
   }
 }
@@ -1124,60 +1152,78 @@ function setEquityDisabled(msg) {
   for (let i = 0; i < numPlayers; i++) {
     const seg = document.getElementById('barSeg' + i);
     if (seg) seg.style.width = '0%';
+    const segSplit = document.getElementById('barSeg' + i + 'Split');
+    if (segSplit) segSplit.style.width = '0%';
+    const splitSpan = document.getElementById('pctSplit' + i);
+    if (splitSpan) splitSpan.textContent = '';
   }
-
-  const tie = document.getElementById('barTie');
-  if (tie) tie.style.width = '100%';
+  hidePlayerTooltip();
 }
 
 function setEquity2Way(stage, pct1, pct2, tiePct, total) {
   document.getElementById('equityBar').classList.remove('disabled');
-
   updateStageLabel(stage);
 
-  document.getElementById('barSeg0').style.width = pct1 + '%';
-  document.getElementById('barSeg1').style.width = pct2 + '%';
-  document.getElementById('barTie').style.width = tiePct + '%';
+  // For 2-way, split equity per player = tiePct/2 (symmetric)
+  const splitEq1 = tiePct / 2, splitEq2 = tiePct / 2;
+  const equity1 = pct1 + splitEq1, equity2 = pct2 + splitEq2;
 
-  flashUpdate('pctLabel0', (pct1 + tiePct / 2).toFixed(2) + '%');
-  flashUpdate('pctLabel1', (pct2 + tiePct / 2).toFixed(2) + '%');
+  document.getElementById('barSeg0').style.width = pct1 + '%';
+  document.getElementById('barSeg0Split').style.width = splitEq1 + '%';
+  document.getElementById('barSeg1').style.width = pct2 + '%';
+  document.getElementById('barSeg1Split').style.width = splitEq2 + '%';
+
+  flashUpdate('pctEquity0', equity1.toFixed(2) + '%');
+  flashUpdate('pctEquity1', equity2.toFixed(2) + '%');
+  updateSplitLabel(0, tiePct);
+  updateSplitLabel(1, tiePct);
+
+  currentBreakdown = [
+    { equity: equity1, win: pct1, splitFreq: tiePct, lose: 100 - equity1 - splitEq1 },
+    { equity: equity2, win: pct2, splitFreq: tiePct, lose: 100 - equity2 - splitEq2 },
+  ];
 
   const splitsPrefix = document.getElementById('splitsPrefix');
-  if (activeBoardCards().length === 5) {
-    splitsPrefix.textContent = 'Final board';
-  } else {
-    splitsPrefix.textContent = `Split: ${tiePct.toFixed(2)}% \u00b7 ${total.toLocaleString()} possible boards`;
-  }
+  splitsPrefix.textContent = activeBoardCards().length === 5
+    ? 'Final board'
+    : `${total.toLocaleString()} possible boards`;
   const mcTrigger2w = document.getElementById('mcTrigger');
   if (mcTrigger2w) mcTrigger2w.style.display = 'none';
 }
 
-function setEquityNWay(stage, equities, splitPct, total, margin, isExact, done) {
+function setEquityNWay(stage, equities, splitEquities, splitFreqs, total, margin, isExact, done) {
   document.getElementById('equityBar').classList.remove('disabled');
-
   updateStageLabel(stage);
 
-  // Update bar segments
-  for (let i = 0; i < numPlayers; i++) {
-    const seg = document.getElementById('barSeg' + i);
-    if (seg) seg.style.width = equities[i] + '%';
-  }
-
-  // Update percentage labels
+  // Update bar segments: solid win portion + striped split portion per player
   const prefix = isExact ? '' : '~';
+  currentBreakdown = [];
   for (let i = 0; i < numPlayers; i++) {
-    flashUpdate('pctLabel' + i, prefix + equities[i].toFixed(1) + '%');
+    const winPct = equities[i] - splitEquities[i];
+    const splitEq = splitEquities[i];
+    const seg = document.getElementById('barSeg' + i);
+    if (seg) seg.style.width = winPct + '%';
+    const segSplit = document.getElementById('barSeg' + i + 'Split');
+    if (segSplit) segSplit.style.width = splitEq + '%';
+
+    flashUpdate('pctEquity' + i, prefix + equities[i].toFixed(1) + '%');
+    updateSplitLabel(i, splitFreqs[i]);
+
+    currentBreakdown.push({
+      equity: equities[i],
+      win: winPct,
+      splitFreq: splitFreqs[i],
+      lose: 100 - equities[i] - splitFreqs[i] + splitEquities[i],
+    });
   }
 
   // Splits line
   const splitsPrefix = document.getElementById('splitsPrefix');
   const mcTrigger = document.getElementById('mcTrigger');
   if (isExact) {
-    if (activeBoardCards().length === 5) {
-      splitsPrefix.textContent = 'Final board';
-    } else {
-      splitsPrefix.textContent = `Split: ${splitPct.toFixed(1)}% \u00b7 ${total.toLocaleString()} possible boards`;
-    }
+    splitsPrefix.textContent = activeBoardCards().length === 5
+      ? 'Final board'
+      : `${total.toLocaleString()} possible boards`;
     if (mcTrigger) mcTrigger.style.display = 'none';
   } else {
     const progress = done ? '' : '\u2026';
@@ -1187,6 +1233,41 @@ function setEquityNWay(stage, equities, splitPct, total, margin, isExact, done) 
       mcTrigger.style.display = '';
     }
   }
+}
+
+const SPLIT_THRESHOLD = 0.05; // don't show split label below this %
+
+function updateSplitLabel(playerIdx, splitFreq) {
+  const el = document.getElementById('pctSplit' + playerIdx);
+  if (!el) return;
+  el.textContent = splitFreq >= SPLIT_THRESHOLD ? 'S: ' + splitFreq.toFixed(1) + '%' : '';
+}
+
+function showPlayerTooltip(playerIdx, anchorEl) {
+  const tooltip = document.getElementById('playerTooltip');
+  const labels = document.getElementById('barLabels');
+  if (!tooltip || !labels || !currentBreakdown[playerIdx]) return;
+
+  const bd = currentBreakdown[playerIdx];
+  const win = Math.max(0, bd.win);
+  const split = Math.max(0, bd.splitFreq);
+  const lose = Math.max(0, bd.lose);
+  tooltip.innerHTML =
+    `Win: ${win.toFixed(2)}%<br>` +
+    `Split: ${split.toFixed(2)}%<br>` +
+    `Lose: ${lose.toFixed(2)}%`;
+
+  // Horizontal: center tooltip over the clicked label
+  const labelsRect = labels.getBoundingClientRect();
+  const anchorRect = anchorEl.getBoundingClientRect();
+  const centerPct = (anchorRect.left + anchorRect.width / 2 - labelsRect.left) / labelsRect.width * 100;
+  tooltip.style.left = centerPct + '%';
+  tooltip.style.display = '';
+}
+
+function hidePlayerTooltip() {
+  const tooltip = document.getElementById('playerTooltip');
+  if (tooltip) tooltip.style.display = 'none';
 }
 
 function updateStageLabel(text) {
@@ -1360,29 +1441,30 @@ function buildEquityBar() {
   splitBar.className = 'split-bar';
   splitBar.id = 'splitBar';
 
+  // Each player gets a solid win segment + a striped split segment
   for (let i = 0; i < numPlayers; i++) {
-    const seg = document.createElement('div');
-    seg.className = 'bar-segment';
-    seg.id = 'barSeg' + i;
-    seg.style.width = '0%';
-    seg.style.background = HAND_COLORS[i];
-    splitBar.appendChild(seg);
-  }
+    const win = document.createElement('div');
+    win.className = 'bar-segment';
+    win.id = 'barSeg' + i;
+    win.style.width = '0%';
+    win.style.background = HAND_COLORS[i];
+    win.dataset.player = i;
+    splitBar.appendChild(win);
 
-  // Tie bar only for 2-way
-  if (numPlayers === 2) {
-    const tie = document.createElement('div');
-    tie.className = 'bar-segment';
-    tie.id = 'barTie';
-    tie.style.width = '100%';
-    tie.style.background = '#44445a';
-    splitBar.appendChild(tie);
+    const split = document.createElement('div');
+    split.className = 'bar-segment';
+    split.id = 'barSeg' + i + 'Split';
+    split.style.width = '0%';
+    // Diagonal stripe: player color alternating with dark gray
+    split.style.backgroundImage = `repeating-linear-gradient(-45deg, ${HAND_COLORS[i]}, ${HAND_COLORS[i]} 4px, rgba(30,30,55,0.75) 4px, rgba(30,30,55,0.75) 8px)`;
+    split.dataset.player = i;
+    splitBar.appendChild(split);
   }
 
   barWrap.appendChild(splitBar);
   section.appendChild(barWrap);
 
-  // Bar labels
+  // Bar labels: equity % + split % per player
   const labels = document.createElement('div');
   labels.className = 'bar-labels' + (numPlayers > 2 ? ' nway' : '');
   labels.id = 'barLabels';
@@ -1392,10 +1474,40 @@ function buildEquityBar() {
     lbl.className = 'pct-label';
     lbl.id = 'pctLabel' + i;
     lbl.style.color = HAND_COLORS[i];
+    lbl.dataset.player = i;
+    // Right-align the last player's label in 2-way
+    if (numPlayers === 2 && i === 1) lbl.style.alignItems = 'flex-end';
+
+    const equitySpan = document.createElement('span');
+    equitySpan.id = 'pctEquity' + i;
+    lbl.appendChild(equitySpan);
+
+    const splitSpan = document.createElement('span');
+    splitSpan.id = 'pctSplit' + i;
+    splitSpan.className = 'pct-split';
+    lbl.appendChild(splitSpan);
+
     labels.appendChild(lbl);
   }
 
+  // Shared player tooltip (repositioned per click)
+  const playerTooltip = document.createElement('div');
+  playerTooltip.className = 'player-tooltip';
+  playerTooltip.id = 'playerTooltip';
+  playerTooltip.style.display = 'none';
+  labels.appendChild(playerTooltip);
+
   section.appendChild(labels);
+
+  // Click on bar or label → show per-player breakdown tooltip
+  [splitBar, labels].forEach(el => {
+    el.addEventListener('click', function(e) {
+      const tgt = e.target.closest('[data-player]');
+      if (!tgt) return;
+      e.stopPropagation();
+      showPlayerTooltip(parseInt(tgt.dataset.player), tgt);
+    });
+  });
 
   // Splits line: text prefix + optional MC trigger + popover
   const splitsLine = document.createElement('div');
@@ -1428,10 +1540,11 @@ function buildEquityBar() {
   });
 }
 
-// Close MC popover on outside click
+// Close popovers on outside click
 document.addEventListener('click', function() {
   const pop = document.getElementById('mcPopover');
   if (pop) pop.style.display = 'none';
+  hidePlayerTooltip();
 });
 
 // ── URL hash state ────────────────────────────────────────────────────────────
