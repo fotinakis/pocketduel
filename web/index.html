@@ -365,11 +365,10 @@
 
   .pct-split {
     display: block;
-    font-size: 0.55em;
     font-weight: 400;
-    color: var(--muted);
-    line-height: 1.3;
-    min-height: 1.3em; /* always reserve space to prevent layout shifts */
+    color: #aaaacc; /* distinct from text but readable */
+    line-height: 1.2;
+    min-height: 1.2em; /* always reserve space to prevent layout shifts */
   }
 
   .player-tooltip {
@@ -1173,10 +1172,8 @@ function setEquity2Way(stage, pct1, pct2, tiePct, total) {
   document.getElementById('barSeg1').style.width = pct2 + '%';
   document.getElementById('barSeg1Split').style.width = splitEq2 + '%';
 
-  flashUpdate('pctEquity0', equity1.toFixed(2) + '%');
-  flashUpdate('pctEquity1', equity2.toFixed(2) + '%');
-  updateSplitLabel(0, tiePct);
-  updateSplitLabel(1, tiePct);
+  setPlayerLabel(0, pct1, tiePct, 2);
+  setPlayerLabel(1, pct2, tiePct, 2);
 
   currentBreakdown = [
     { equity: equity1, win: pct1,  splitFreq: tiePct, lose: 100 - pct1  - tiePct },
@@ -1196,18 +1193,15 @@ function setEquityNWay(stage, equities, splitEquities, splitFreqs, total, margin
   updateStageLabel(stage);
 
   // Update bar segments: solid win portion + striped split portion per player
-  const prefix = isExact ? '' : '~';
   currentBreakdown = [];
   for (let i = 0; i < numPlayers; i++) {
     const winPct = equities[i] - splitEquities[i];
-    const splitEq = splitEquities[i];
     const seg = document.getElementById('barSeg' + i);
     if (seg) seg.style.width = winPct + '%';
     const segSplit = document.getElementById('barSeg' + i + 'Split');
-    if (segSplit) segSplit.style.width = splitEq + '%';
+    if (segSplit) segSplit.style.width = splitEquities[i] + '%';
 
-    flashUpdate('pctEquity' + i, prefix + equities[i].toFixed(1) + '%');
-    updateSplitLabel(i, splitFreqs[i]);
+    setPlayerLabel(i, winPct, splitFreqs[i], 1);
 
     currentBreakdown.push({
       equity: equities[i],
@@ -1237,10 +1231,12 @@ function setEquityNWay(stage, equities, splitEquities, splitFreqs, total, margin
 
 const SPLIT_THRESHOLD = 0.05; // don't show split label below this %
 
-function updateSplitLabel(playerIdx, splitFreq) {
-  const el = document.getElementById('pctSplit' + playerIdx);
-  if (!el) return;
-  el.textContent = splitFreq >= SPLIT_THRESHOLD ? 'S: ' + splitFreq.toFixed(1) + '%' : '';
+// Update a player's two-line label: win% (with W: prefix if splits) + S: split%
+function setPlayerLabel(playerIdx, winPct, splitFreq, decimals) {
+  const hasSplit = splitFreq >= SPLIT_THRESHOLD;
+  flashUpdate('pctEquity' + playerIdx, (hasSplit ? 'W: ' : '') + winPct.toFixed(decimals) + '%');
+  const splitEl = document.getElementById('pctSplit' + playerIdx);
+  if (splitEl) splitEl.textContent = hasSplit ? 'S: ' + splitFreq.toFixed(decimals) + '%' : '';
 }
 
 function showPlayerTooltip(playerIdx, anchorEl) {
@@ -1455,8 +1451,8 @@ function buildEquityBar() {
     split.className = 'bar-segment';
     split.id = 'barSeg' + i + 'Split';
     split.style.width = '0%';
-    // Diagonal stripe: player color alternating with dark gray
-    split.style.backgroundImage = `repeating-linear-gradient(-45deg, ${HAND_COLORS[i]}, ${HAND_COLORS[i]} 4px, rgba(30,30,55,0.75) 4px, rgba(30,30,55,0.75) 8px)`;
+    // Diagonal stripe: player color with semi-transparent dark stripes so base color shows through
+    split.style.backgroundImage = `repeating-linear-gradient(-45deg, ${HAND_COLORS[i]}, ${HAND_COLORS[i]} 4px, rgba(0,0,25,0.38) 4px, rgba(0,0,25,0.38) 8px)`;
     split.dataset.player = i;
     splitBar.appendChild(split);
   }
