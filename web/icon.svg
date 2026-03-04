@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <pattern id="blueStripes" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="28" height="28" fill="#1a6bbf"/>
+      <rect width="14" height="28" fill="#4A9EFF"/>
+    </pattern>
+
+    <pattern id="orangeStripes" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="28" height="28" fill="#c45a00"/>
+      <rect width="14" height="28" fill="#F97316"/>
+    </pattern>
+
+    <clipPath id="circleClip">
+      <circle cx="256" cy="256" r="256"/>
+    </clipPath>
+
+    <clipPath id="leftSlice">
+      <polygon points="0,0 512,0 0,512"/>
+    </clipPath>
+
+    <clipPath id="rightSlice">
+      <polygon points="512,0 512,512 0,512"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#circleClip)">
+    <rect x="0" y="0" width="512" height="512" fill="url(#blueStripes)" clip-path="url(#leftSlice)"/>
+    <rect x="0" y="0" width="512" height="512" fill="url(#orangeStripes)" clip-path="url(#rightSlice)"/>
+
+    <line x1="75" y1="437" x2="437" y2="75" stroke="white" stroke-width="14" stroke-linecap="round" opacity="0.8"/>
+    <circle cx="170" cy="170" r="56" fill="none" stroke="white" stroke-width="14" opacity="0.8"/>
+    <circle cx="342" cy="342" r="56" fill="none" stroke="white" stroke-width="14" opacity="0.8"/>
+  </g>
+</svg>
