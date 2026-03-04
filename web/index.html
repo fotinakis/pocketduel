@@ -1179,8 +1179,8 @@ function setEquity2Way(stage, pct1, pct2, tiePct, total) {
   updateSplitLabel(1, tiePct);
 
   currentBreakdown = [
-    { equity: equity1, win: pct1, splitFreq: tiePct, lose: 100 - equity1 - splitEq1 },
-    { equity: equity2, win: pct2, splitFreq: tiePct, lose: 100 - equity2 - splitEq2 },
+    { equity: equity1, win: pct1,  splitFreq: tiePct, lose: 100 - pct1  - tiePct },
+    { equity: equity2, win: pct2,  splitFreq: tiePct, lose: 100 - pct2  - tiePct },
   ];
 
   const splitsPrefix = document.getElementById('splitsPrefix');
@@ -1213,7 +1213,7 @@ function setEquityNWay(stage, equities, splitEquities, splitFreqs, total, margin
       equity: equities[i],
       win: winPct,
       splitFreq: splitFreqs[i],
-      lose: 100 - equities[i] - splitFreqs[i] + splitEquities[i],
+      lose: 100 - winPct - splitFreqs[i],
     });
   }
 

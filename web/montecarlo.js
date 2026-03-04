@@ -142,15 +142,6 @@ const Multiway = (() => {
     return isSplit;
   }
 
-  // Place drawn cards into each player's 7-card hand
-  function placeCards(sevens, numHands, boardLen, cards, startIdx, count) {
-    for (let c = 0; c < count; c++) {
-      for (let p = 0; p < numHands; p++) {
-        sevens[p][2 + boardLen + startIdx + c] = cards[c];
-      }
-    }
-  }
-
   // ── Exact enumeration (needed ≤ 2) ────────────────────────────────────────
 
   function calculateExact(handStrs, boardStrs) {
