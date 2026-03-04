@@ -116,8 +116,10 @@ const Multiway = (() => {
     return { numHands, remaining, needed, sevens };
   }
 
-  // Score all hands, distribute equity share
-  function scoreRound(sevens, numHands, equitySum) {
+  // Score all hands, distribute equity share.
+  // splitEquitySum[p] accumulates each player's equity from split boards.
+  // splitCountSum[p] accumulates how many boards player p was involved in a split.
+  function scoreRound(sevens, numHands, equitySum, splitEquitySum, splitCountSum) {
     let maxScore = -1;
     const scores = new Array(numHands);
     for (let p = 0; p < numHands; p++) {
@@ -126,20 +128,18 @@ const Multiway = (() => {
     }
     let nw = 0;
     for (let p = 0; p < numHands; p++) if (scores[p] === maxScore) nw++;
+    const isSplit = nw > 1;
     const share = 1.0 / nw;
     for (let p = 0; p < numHands; p++) {
-      if (scores[p] === maxScore) equitySum[p] += share;
-    }
-    return nw > 1; // was split?
-  }
-
-  // Place drawn cards into each player's 7-card hand
-  function placeCards(sevens, numHands, boardLen, cards, startIdx, count) {
-    for (let c = 0; c < count; c++) {
-      for (let p = 0; p < numHands; p++) {
-        sevens[p][2 + boardLen + startIdx + c] = cards[c];
+      if (scores[p] === maxScore) {
+        equitySum[p] += share;
+        if (isSplit) {
+          splitEquitySum[p] += share;
+          splitCountSum[p]++;
+        }
       }
     }
+    return isSplit;
   }
 
   // ── Exact enumeration (needed ≤ 2) ────────────────────────────────────────
@@ -147,17 +147,19 @@ const Multiway = (() => {
   function calculateExact(handStrs, boardStrs) {
     const { numHands, remaining, needed, sevens } = setup(handStrs, boardStrs);
     const equity = new Float64Array(numHands);
+    const splitEquity = new Float64Array(numHands);
+    const splitCount = new Float64Array(numHands);
     let splits = 0, total = 0;
     const n = remaining.length;
 
     if (needed === 0) {
-      if (scoreRound(sevens, numHands, equity)) splits++;
+      if (scoreRound(sevens, numHands, equity, splitEquity, splitCount)) splits++;
       total = 1;
 
     } else if (needed === 1) {
       for (let i = 0; i < n; i++) {
         for (let p = 0; p < numHands; p++) sevens[p][6] = remaining[i];
-        if (scoreRound(sevens, numHands, equity)) splits++;
+        if (scoreRound(sevens, numHands, equity, splitEquity, splitCount)) splits++;
         total++;
       }
 
@@ -166,17 +168,23 @@ const Multiway = (() => {
         for (let p = 0; p < numHands; p++) sevens[p][5] = remaining[i];
         for (let j = i + 1; j < n; j++) {
           for (let p = 0; p < numHands; p++) sevens[p][6] = remaining[j];
-          if (scoreRound(sevens, numHands, equity)) splits++;
+          if (scoreRound(sevens, numHands, equity, splitEquity, splitCount)) splits++;
           total++;
         }
       }
     }
 
-    const equities = [];
-    for (let p = 0; p < numHands; p++) equities.push(equity[p] / total * 100);
+    const equities = [], splitEquities = [], splitFreqs = [];
+    for (let p = 0; p < numHands; p++) {
+      equities.push(equity[p] / total * 100);
+      splitEquities.push(splitEquity[p] / total * 100);
+      splitFreqs.push(splitCount[p] / total * 100);
+    }
 
     return {
       equities,
+      splitEquities,
+      splitFreqs,
       splitPct: total > 0 ? splits / total * 100 : 0,
       total,
       margin: 0,
@@ -197,6 +205,8 @@ const Multiway = (() => {
     const { numHands, remaining, needed, sevens } = setup(handStrs, boardStrs);
     const boardLen = 5 - needed;
     const equity = new Float64Array(numHands);
+    const splitEquity = new Float64Array(numHands);
+    const splitCount = new Float64Array(numHands);
     let splits = 0, total = 0;
 
     function sample() {
@@ -206,7 +216,7 @@ const Multiway = (() => {
         const tmp = remaining[i]; remaining[i] = remaining[j]; remaining[j] = tmp;
         for (let p = 0; p < numHands; p++) sevens[p][2 + boardLen + i] = remaining[i];
       }
-      if (scoreRound(sevens, numHands, equity)) splits++;
+      if (scoreRound(sevens, numHands, equity, splitEquity, splitCount)) splits++;
       total++;
     }
 
@@ -216,14 +226,20 @@ const Multiway = (() => {
       const end = Math.min(total + MC_CHUNK, MC_SAMPLES);
       while (total < end) sample();
 
-      const equities = [];
-      for (let p = 0; p < numHands; p++) equities.push(equity[p] / total * 100);
+      const equities = [], splitEquities = [], splitFreqs = [];
+      for (let p = 0; p < numHands; p++) {
+        equities.push(equity[p] / total * 100);
+        splitEquities.push(splitEquity[p] / total * 100);
+        splitFreqs.push(splitCount[p] / total * 100);
+      }
 
       // Margin of error: conservative worst-case (p=0.5)
       const margin = 1.96 * Math.sqrt(0.25 / total) * 100;
 
       onUpdate({
         equities,
+        splitEquities,
+        splitFreqs,
         splitPct: splits / total * 100,
         total,
         margin,
