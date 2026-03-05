@@ -2,7 +2,7 @@
 
 https://pocketduel.com
 
-A Texas Hold'em equity calculator for the browser. Pick 2–4 hole card holdings and a board, and it tells you in real time how often each hand wins — pre-flop through the river, heads-up or multi-way.
+A Texas Hold'em equity calculator for the browser. Pick hole cards and a board, and it tells you in real time how often each hand wins — pre-flop through the river, heads-up or multi-way.
 
 ## Goal
 
