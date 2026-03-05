@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>pocketduel — Poker Equity</title>
+<title>PocketDuel — Poker Equity</title>
 <meta name="description" content="Texas Hold'em poker equity calculator. Fast, free, no login required.">
 <meta name="theme-color" content="#0d0d17">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="pocketduel">
+<meta name="apple-mobile-web-app-title" content="PocketDuel">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
@@ -58,6 +58,65 @@
     height: 100dvh;
     overflow: hidden;
   }
+
+  /* ── Brand bar ── */
+  .brand-bar {
+    font-size: 11px;
+    font-weight: 200;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #a0a5b0;
+    padding: 8px 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #2a2a4a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+  }
+  .brand-bar-desktop { display: none; }
+
+  .menu-btn {
+    background: none;
+    border: none;
+    color: #707588;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .menu-btn:hover { color: #a0a5b0; }
+  .menu-btn svg { width: 18px; height: 18px; }
+
+  .menu-dropdown {
+    display: none;
+    position: absolute;
+    right: 8px;
+    top: 100%;
+    background: var(--surface2);
+    border: 1px solid #2a2a4a;
+    border-radius: 6px;
+    padding: 4px 0;
+    z-index: 200;
+    min-width: 160px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .menu-dropdown.open { display: block; }
+
+  .menu-dropdown a {
+    display: block;
+    padding: 8px 14px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .menu-dropdown a:hover { background: rgba(255,255,255,0.06); }
 
   /* ── Picker section (left panel desktop / fixed bottom mobile) ── */
   .picker-section {
@@ -584,6 +643,12 @@
   @media (max-width: 767px) {
     body { overflow: hidden; }
 
+    .brand-bar-mobile {
+      padding: 6px 12px;
+      font-size: 10px;
+    }
+    .brand-bar-desktop { display: none; }
+
     .picker-section {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -606,6 +671,16 @@
   @media (min-width: 768px) {
     body { flex-direction: row; }
 
+    .brand-bar-mobile { display: none; }
+    .brand-bar-desktop {
+      display: flex;
+      font-size: 14px;
+      padding: 16px 10px;
+      margin: -12px -10px 0;
+      letter-spacing: 0.22em;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
     .picker-section {
       flex: 0 0 36%;
       border-top: none;
@@ -617,6 +692,7 @@
 
     .picker-section-label {
       display: block;
+      margin-top: 20px;
     }
 
     .card-picker-grid {
@@ -733,8 +809,28 @@
 </head>
 <body>
 
+<!-- Mobile top bar -->
+<div class="brand-bar brand-bar-mobile">
+  <span>PocketDuel</span>
+  <button class="menu-btn" aria-label="Menu" onclick="toggleMenu(this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+  </button>
+  <div class="menu-dropdown">
+    <a href="https://github.com/fotinakis/pocketduel/issues" target="_blank" rel="noopener">Send feedback</a>
+  </div>
+</div>
+
 <!-- Picker section: left panel (desktop) / fixed bottom (mobile) -->
 <div class="picker-section" id="pickerSection">
+  <div class="brand-bar brand-bar-desktop">
+    <span>PocketDuel</span>
+    <button class="menu-btn" aria-label="Menu" onclick="toggleMenu(this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+    </button>
+    <div class="menu-dropdown">
+      <a href="https://github.com/fotinakis/pocketduel/issues" target="_blank" rel="noopener">Send feedback</a>
+    </div>
+  </div>
   <div class="picker-section-label">Select a Card</div>
   <div class="card-picker-grid" id="cardPickerGrid"></div>
 </div>
@@ -760,6 +856,17 @@
 <script src="postflop.js?v3"></script>
 <script src="montecarlo.js?v3"></script>
 <script>
+
+// ── Menu ─────────────────────────────────────────────────────────────────────
+
+function toggleMenu(btn) {
+  const dd = btn.parentElement.querySelector('.menu-dropdown');
+  dd.classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.menu-btn'))
+    document.querySelectorAll('.menu-dropdown.open').forEach(d => d.classList.remove('open'));
+});
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -1462,8 +1569,8 @@ function buildEquityBar() {
     split.className = 'bar-segment';
     split.id = 'barSeg' + i + 'Split';
     split.style.width = '0%';
-    // Diagonal stripe: player color with semi-transparent dark stripes so base color shows through
-    split.style.backgroundImage = `repeating-linear-gradient(-45deg, ${HAND_COLORS[i]}, ${HAND_COLORS[i]} 4px, rgba(0,0,25,0.38) 4px, rgba(0,0,25,0.38) 8px)`;
+    // Diagonal stripe: player color with semi-transparent lighter stripes
+    split.style.backgroundImage = `repeating-linear-gradient(-45deg, ${HAND_COLORS[i]}, ${HAND_COLORS[i]} 4px, color-mix(in srgb, ${HAND_COLORS[i]} 50%, transparent) 4px, color-mix(in srgb, ${HAND_COLORS[i]} 50%, transparent) 8px)`;
     split.dataset.player = i;
     splitBar.appendChild(split);
   }
