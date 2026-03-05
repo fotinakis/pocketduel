@@ -59,6 +59,18 @@
     overflow: hidden;
   }
 
+  /* ── Brand bar ── */
+  .brand-bar {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    padding: 8px 12px;
+    flex-shrink: 0;
+  }
+  .brand-bar-desktop { display: none; }
+
   /* ── Picker section (left panel desktop / fixed bottom mobile) ── */
   .picker-section {
     background: var(--surface);
@@ -584,6 +596,13 @@
   @media (max-width: 767px) {
     body { overflow: hidden; }
 
+    .brand-bar-mobile {
+      padding: 6px 12px;
+      font-size: 10px;
+      text-align: center;
+    }
+    .brand-bar-desktop { display: none; }
+
     .picker-section {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -605,6 +624,14 @@
   /* ── Desktop layout ── */
   @media (min-width: 768px) {
     body { flex-direction: row; }
+
+    .brand-bar-mobile { display: none; }
+    .brand-bar-desktop {
+      display: block;
+      font-size: 14px;
+      padding: 16px 10px 12px;
+      letter-spacing: 0.2em;
+    }
 
     .picker-section {
       flex: 0 0 36%;
@@ -733,8 +760,12 @@
 </head>
 <body>
 
+<!-- Mobile top bar -->
+<div class="brand-bar brand-bar-mobile">PocketDuel</div>
+
 <!-- Picker section: left panel (desktop) / fixed bottom (mobile) -->
 <div class="picker-section" id="pickerSection">
+  <div class="brand-bar brand-bar-desktop">PocketDuel</div>
   <div class="picker-section-label">Select a Card</div>
   <div class="card-picker-grid" id="cardPickerGrid"></div>
 </div>
