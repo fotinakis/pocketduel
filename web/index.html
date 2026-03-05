@@ -69,8 +69,54 @@
     padding: 8px 12px;
     flex-shrink: 0;
     border-bottom: 1px solid #2a2a4a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
   }
   .brand-bar-desktop { display: none; }
+
+  .menu-btn {
+    background: none;
+    border: none;
+    color: #707588;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .menu-btn:hover { color: #a0a5b0; }
+  .menu-btn svg { width: 18px; height: 18px; }
+
+  .menu-dropdown {
+    display: none;
+    position: absolute;
+    right: 8px;
+    top: 100%;
+    background: var(--surface2);
+    border: 1px solid #2a2a4a;
+    border-radius: 6px;
+    padding: 4px 0;
+    z-index: 200;
+    min-width: 160px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .menu-dropdown.open { display: block; }
+
+  .menu-dropdown a {
+    display: block;
+    padding: 8px 14px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .menu-dropdown a:hover { background: rgba(255,255,255,0.06); }
 
   /* ── Picker section (left panel desktop / fixed bottom mobile) ── */
   .picker-section {
@@ -600,7 +646,6 @@
     .brand-bar-mobile {
       padding: 6px 12px;
       font-size: 10px;
-      text-align: center;
     }
     .brand-bar-desktop { display: none; }
 
@@ -628,13 +673,12 @@
 
     .brand-bar-mobile { display: none; }
     .brand-bar-desktop {
-      display: block;
+      display: flex;
       font-size: 14px;
       padding: 16px 10px;
       margin: -12px -10px 0;
       letter-spacing: 0.22em;
       border-bottom: 1px solid #2a2a4a;
-      text-align: center;
     }
 
     .picker-section {
@@ -766,11 +810,27 @@
 <body>
 
 <!-- Mobile top bar -->
-<div class="brand-bar brand-bar-mobile">PocketDuel</div>
+<div class="brand-bar brand-bar-mobile">
+  <span>PocketDuel</span>
+  <button class="menu-btn" aria-label="Menu" onclick="toggleMenu(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+  </button>
+  <div class="menu-dropdown">
+    <a href="https://github.com/fotinakis/pocketduel/issues" target="_blank" rel="noopener">Send feedback</a>
+  </div>
+</div>
 
 <!-- Picker section: left panel (desktop) / fixed bottom (mobile) -->
 <div class="picker-section" id="pickerSection">
-  <div class="brand-bar brand-bar-desktop">PocketDuel</div>
+  <div class="brand-bar brand-bar-desktop">
+    <span>PocketDuel</span>
+    <button class="menu-btn" aria-label="Menu" onclick="toggleMenu(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+    </button>
+    <div class="menu-dropdown">
+      <a href="https://github.com/fotinakis/pocketduel/issues" target="_blank" rel="noopener">Send feedback</a>
+    </div>
+  </div>
   <div class="picker-section-label">Select a Card</div>
   <div class="card-picker-grid" id="cardPickerGrid"></div>
 </div>
@@ -796,6 +856,17 @@
 <script src="postflop.js?v3"></script>
 <script src="montecarlo.js?v3"></script>
 <script>
+
+// ── Menu ─────────────────────────────────────────────────────────────────────
+
+function toggleMenu(btn) {
+  const dd = btn.parentElement.querySelector('.menu-dropdown');
+  dd.classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.menu-btn'))
+    document.querySelectorAll('.menu-dropdown.open').forEach(d => d.classList.remove('open'));
+});
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
