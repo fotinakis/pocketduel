@@ -8,6 +8,10 @@ A Texas Hold'em equity calculator for the browser. Pick 2–4 hole card holdings
 
 The goal is a fast, accurate, zero-dependency poker equity tool that works on any device without an account, a download, or a backend. Everything runs client-side in plain JavaScript.
 
+| Heads-up | Multi-way |
+|:---:|:---:|
+| <img width="400" alt="pocketduel-2-way" src="https://github.com/user-attachments/assets/369ae63d-20c2-4073-80d4-4cf38271e03b" /> |  <img width="400" alt="pocketduel-3-way" src="https://github.com/user-attachments/assets/ac515b25-8e70-41fa-8c00-4e23fe463275" />  |
+
 ## Architecture
 
 The project has two halves: a Rust CLI that pre-computes preflop data, and a static web frontend that uses it.
