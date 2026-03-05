@@ -1462,8 +1462,8 @@ function buildEquityBar() {
     split.className = 'bar-segment';
     split.id = 'barSeg' + i + 'Split';
     split.style.width = '0%';
-    // Diagonal stripe: player color with semi-transparent dark stripes so base color shows through
-    split.style.backgroundImage = `repeating-linear-gradient(-45deg, ${HAND_COLORS[i]}, ${HAND_COLORS[i]} 4px, rgba(0,0,25,0.38) 4px, rgba(0,0,25,0.38) 8px)`;
+    // Diagonal stripe: player color with semi-transparent lighter stripes
+    split.style.backgroundImage = `repeating-linear-gradient(-45deg, ${HAND_COLORS[i]}, ${HAND_COLORS[i]} 4px, color-mix(in srgb, ${HAND_COLORS[i]} 50%, transparent) 4px, color-mix(in srgb, ${HAND_COLORS[i]} 50%, transparent) 8px)`;
     split.dataset.player = i;
     splitBar.appendChild(split);
   }
