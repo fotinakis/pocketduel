@@ -1,6 +1,6 @@
 {
-  "name": "pocketduel — Poker Equity",
-  "short_name": "pocketduel",
+  "name": "PocketDuel — Poker Equity",
+  "short_name": "PocketDuel",
   "description": "Texas Hold'em poker equity calculator",
   "start_url": "/",
   "display": "standalone",

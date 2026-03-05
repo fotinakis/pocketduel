@@ -1,4 +1,4 @@
-# pocketduel
+# PocketDuel
 
 https://pocketduel.com
 
