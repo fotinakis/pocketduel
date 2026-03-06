@@ -106,8 +106,10 @@
   }
   .menu-dropdown.open { display: block; }
 
-  .menu-dropdown a {
-    display: block;
+  .menu-dropdown a, .menu-dropdown button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 14px;
     color: var(--text);
     text-decoration: none;
@@ -116,7 +118,76 @@
     text-transform: none;
     letter-spacing: 0;
   }
-  .menu-dropdown a:hover { background: rgba(255,255,255,0.06); }
+  .menu-dropdown a:hover, .menu-dropdown button:hover { background: rgba(255,255,255,0.06); }
+  .menu-dropdown button {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+  }
+  .menu-dropdown a svg, .menu-dropdown button svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* Share modal */
+  .share-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .share-modal-overlay.open { display: flex; }
+
+  .share-modal {
+    background: var(--surface2);
+    border: 1px solid #3a3a6a;
+    border-radius: 10px;
+    padding: 20px 24px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .share-modal h3 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .share-modal-url-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid #2a2a4a;
+    border-radius: 6px;
+    padding: 6px 8px;
+  }
+  .share-modal-url-row input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+  }
+  .share-modal-copy-btn {
+    background: none;
+    border: none;
+    color: #707588;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .share-modal-copy-btn:hover { color: #a0a5b0; }
+  .share-modal-copy-btn svg { width: 16px; height: 16px; }
+  .share-modal-copy-btn.copied { color: #6ddb8a; }
 
   /* ── Picker section (left panel desktop / fixed bottom mobile) ── */
   .picker-section {
@@ -816,7 +887,8 @@
     <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
   </button>
   <div class="menu-dropdown">
-    <a href="https://github.com/fotinakis/pocketduel/issues" target="_blank" rel="noopener">Send feedback</a>
+    <button onclick="openShareModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</button>
+    <a href="https://github.com/fotinakis/pocketduel/issues" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send feedback</a>
   </div>
 </div>
 
@@ -828,7 +900,8 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
     </button>
     <div class="menu-dropdown">
-      <a href="https://github.com/fotinakis/pocketduel/issues" target="_blank" rel="noopener">Send feedback</a>
+      <button onclick="openShareModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</button>
+      <a href="https://github.com/fotinakis/pocketduel/issues" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send feedback</a>
     </div>
   </div>
   <div class="picker-section-label">Select a Card</div>
@@ -853,6 +926,19 @@
   <div class="equity-bar disabled" id="equityBar"></div>
 </div>
 
+<!-- Share modal -->
+<div class="share-modal-overlay" id="shareModalOverlay" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-modal">
+    <h3>Share</h3>
+    <div class="share-modal-url-row">
+      <input type="text" id="shareUrlInput" readonly>
+      <button class="share-modal-copy-btn" id="shareModalCopyBtn" onclick="copyShareUrl()" aria-label="Copy URL">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="postflop.js?v3"></script>
 <script src="montecarlo.js?v3"></script>
 <script>
@@ -867,6 +953,34 @@ document.addEventListener('click', function(e) {
   if (!e.target.closest('.menu-btn'))
     document.querySelectorAll('.menu-dropdown.open').forEach(d => d.classList.remove('open'));
 });
+
+function openShareModal() {
+  document.querySelectorAll('.menu-dropdown.open').forEach(d => d.classList.remove('open'));
+  const overlay = document.getElementById('shareModalOverlay');
+  const input = document.getElementById('shareUrlInput');
+  input.value = window.location.href;
+  overlay.classList.add('open');
+  input.select();
+}
+
+function closeShareModal() {
+  document.getElementById('shareModalOverlay').classList.remove('open');
+  const btn = document.getElementById('shareModalCopyBtn');
+  btn.classList.remove('copied');
+}
+
+function copyShareUrl() {
+  const input = document.getElementById('shareUrlInput');
+  navigator.clipboard.writeText(input.value).then(function() {
+    const btn = document.getElementById('shareModalCopyBtn');
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    }, 2000);
+  });
+}
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
