@@ -592,6 +592,145 @@
     pointer-events: none;
   }
 
+  /* ── Keyboard size toggle ── */
+  .picker-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+  }
+
+  .picker-toggle-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+
+  .picker-toggle {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    background: #2a2a4a;
+    border-radius: 9px;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .picker-toggle.active {
+    background: var(--active);
+  }
+
+  .picker-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .picker-toggle.active::after {
+    transform: translateX(14px);
+  }
+
+  /* ── Large keyboard ── */
+  .large-picker { display: none; }
+  .picker-section.large-mode .card-picker-grid { display: none; }
+  .picker-section.large-mode .large-picker { display: flex; flex: 1; }
+
+  .large-picker {
+    gap: 4px;
+    flex: 1;
+  }
+
+  .large-picker-suits {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .large-suit-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface2);
+    border: 2px solid transparent;
+    font-size: clamp(18px, 5vmin, 28px);
+    transition: filter 0.1s, border-color 0.15s;
+  }
+
+  .large-suit-btn:hover { filter: brightness(1.4); }
+  .large-suit-btn.suit-red   { color: var(--red-suit); }
+  .large-suit-btn.suit-black { color: #c0c8d8; }
+  .large-suit-btn.selected { border-color: var(--active); }
+
+  .large-picker-ranks {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 3px;
+    flex: 1;
+  }
+
+  .large-rank-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface2);
+    border: 1px solid transparent;
+    transition: filter 0.1s;
+    min-height: 0;
+  }
+
+  .large-rank-cell:hover:not(.picker-disabled) { filter: brightness(1.5); }
+
+  .large-rank-cell .picker-rank {
+    font-size: clamp(16px, 4.5vmin, 24px);
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .large-rank-cell .picker-suit {
+    font-size: clamp(12px, 3.5vmin, 18px);
+    line-height: 1;
+  }
+
+  .large-rank-cell.suit-red   { color: var(--red-suit); }
+  .large-rank-cell.suit-black { color: #c0c8d8; }
+
+  .large-rank-cell.picker-disabled {
+    opacity: 0.16;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* Last row has only 1 card (13 = 3*4 + 1), center it */
+  .large-rank-cell:nth-child(13) {
+    grid-column: 2 / 4;
+  }
+
   /* ── Hand-group color underlines ── */
   [data-hand="1"] {
     border-bottom: 3px solid var(--hand1);
@@ -782,6 +921,20 @@
       font-size: clamp(10px, 1.0vw, 13px);
     }
 
+    .large-suit-btn {
+      font-size: clamp(20px, 2vw, 32px);
+      min-width: 52px;
+      padding: 6px 14px;
+    }
+
+    .large-rank-cell .picker-rank {
+      font-size: clamp(18px, 1.8vw, 28px);
+    }
+
+    .large-rank-cell .picker-suit {
+      font-size: clamp(14px, 1.4vw, 20px);
+    }
+
     .main-section {
       flex: 1;
       overflow: hidden;
@@ -905,7 +1058,15 @@
     </div>
   </div>
   <div class="picker-section-label">Select a Card</div>
+  <div class="picker-toggle-row">
+    <span class="picker-toggle-label">Large keys</span>
+    <button class="picker-toggle" id="pickerToggle" aria-label="Toggle large keyboard" onclick="togglePickerMode()"></button>
+  </div>
   <div class="card-picker-grid" id="cardPickerGrid"></div>
+  <div class="large-picker" id="largePicker">
+    <div class="large-picker-suits" id="largePickerSuits"></div>
+    <div class="large-picker-ranks" id="largePickerRanks"></div>
+  </div>
 </div>
 
 <!-- Main section: right panel (desktop) / scrollable content (mobile) -->
@@ -1028,6 +1189,8 @@ let activeSlot = 0;   // 0-7=hole, 8-12=board slot, null=all done
 let preflopEquity = null; // 2-way preflop JSON data
 let currentMCId = null;   // active Monte Carlo run ID
 let currentBreakdown = []; // [{equity, win, splitFreq, lose}, ...] per player
+let largePickerMode = false;
+let selectedLargeSuit = PICKER_SUITS[0]; // default to spades
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -1586,6 +1749,7 @@ function renderPickerGrid() {
       }
     }
   }
+  if (largePickerMode) renderLargePicker();
 }
 
 function renderCommunitySection() {
@@ -1599,6 +1763,7 @@ function renderCommunitySection() {
 function renderAll() {
   renderSlots();
   renderPickerGrid();
+  if (largePickerMode) renderLargePicker();
   renderCommunitySection();
 }
 
@@ -1624,6 +1789,80 @@ function buildPickerGrid() {
       grid.appendChild(cell);
     }
   }
+}
+
+// ── Large picker ──────────────────────────────────────────────────────────────
+
+function buildLargePicker() {
+  const suitsContainer = document.getElementById('largePickerSuits');
+  const ranksContainer = document.getElementById('largePickerRanks');
+
+  // Build suit buttons
+  for (const suit of PICKER_SUITS) {
+    const btn = document.createElement('button');
+    btn.className = 'large-suit-btn ' + suit.cls;
+    btn.id = 'largeSuit-' + suit.ch;
+    btn.textContent = suit.sym;
+    btn.addEventListener('click', () => selectLargeSuit(suit));
+    suitsContainer.appendChild(btn);
+  }
+
+  // Build rank cells (populated when suit is selected)
+  for (const rank of PICKER_RANKS) {
+    const cell = document.createElement('div');
+    cell.className = 'large-rank-cell';
+    cell.id = 'largeRank-' + rank;
+    const rankSpan = document.createElement('span');
+    rankSpan.className = 'picker-rank';
+    rankSpan.textContent = rank === 'T' ? '10' : rank;
+    const suitSpan = document.createElement('span');
+    suitSpan.className = 'picker-suit';
+    suitSpan.textContent = '';
+    cell.appendChild(rankSpan);
+    cell.appendChild(suitSpan);
+    cell.addEventListener('click', () => {
+      const cardStr = rank + selectedLargeSuit.ch;
+      onPickerClick(cardStr);
+    });
+    ranksContainer.appendChild(cell);
+  }
+}
+
+function selectLargeSuit(suit) {
+  selectedLargeSuit = suit;
+  renderLargePicker();
+}
+
+function renderLargePicker() {
+  const used = getAllUsedCards();
+  const allDone = activeSlot === null;
+
+  // Update suit button selection
+  for (const suit of PICKER_SUITS) {
+    const btn = document.getElementById('largeSuit-' + suit.ch);
+    btn.classList.toggle('selected', suit.ch === selectedLargeSuit.ch);
+  }
+
+  // Update rank cells for selected suit
+  for (const rank of PICKER_RANKS) {
+    const cell = document.getElementById('largeRank-' + rank);
+    const cardStr = rank + selectedLargeSuit.ch;
+    cell.className = 'large-rank-cell ' + selectedLargeSuit.cls;
+    cell.querySelector('.picker-suit').textContent = selectedLargeSuit.sym;
+    if (used.has(cardStr) || allDone) {
+      cell.classList.add('picker-disabled');
+    }
+  }
+}
+
+function togglePickerMode() {
+  largePickerMode = !largePickerMode;
+  const section = document.getElementById('pickerSection');
+  const toggle = document.getElementById('pickerToggle');
+  section.classList.toggle('large-mode', largePickerMode);
+  toggle.classList.toggle('active', largePickerMode);
+  if (largePickerMode) renderLargePicker();
+  try { localStorage.setItem('pocketduel-large-keys', largePickerMode ? '1' : '0'); } catch(e) {}
 }
 
 function buildBoardSlots() {
@@ -1894,6 +2133,15 @@ window.addEventListener('hashchange', function() {
 
 loadFromHash();
 buildPickerGrid();
+buildLargePicker();
+// Restore large-keys preference
+try {
+  if (localStorage.getItem('pocketduel-large-keys') === '1') {
+    largePickerMode = true;
+    document.getElementById('pickerSection').classList.add('large-mode');
+    document.getElementById('pickerToggle').classList.add('active');
+  }
+} catch(e) {}
 buildBoardSlots();
 buildHandsDisplay();
 buildEquityBar();
