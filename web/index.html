@@ -683,8 +683,8 @@
 
   .large-picker-ranks {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
     gap: 3px;
     flex: 1;
   }
@@ -726,9 +726,9 @@
     pointer-events: none;
   }
 
-  /* Last row has only 1 card (13 = 4*3 + 1), center it */
+  /* Last row has only 1 card (13 = 3*4 + 1), center it */
   .large-rank-cell:nth-child(13) {
-    grid-column: 2;
+    grid-column: 2 / 4;
   }
 
   /* ── Hand-group color underlines ── */
