@@ -62,7 +62,7 @@ pocketduel --hand1 AKs --hand2 QQ
 pocketduel --hand1 AKo --hand2 KQo
 ```
 
-Three input formats are supported (case-insensitive, mixable):
+Three input formats are supported:
 
 | Format | Example | Description |
 |--------|---------|-------------|
