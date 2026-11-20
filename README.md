@@ -124,6 +124,8 @@ cargo test                    # full suite including simulation integration test
 
 ## Running the web app locally
 
+The site is a Cloudflare Worker that serves `web/` as static assets. Run it locally with:
+
 ```bash
-npx serve web/
+npx wrangler dev
 ```
