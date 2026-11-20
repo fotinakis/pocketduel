@@ -124,16 +124,8 @@ cargo test                    # full suite including simulation integration test
 
 ## Running the web app locally
 
-```bash
-npx serve web/
-```
-
-Or run it the way production serves it:
+The site is a Cloudflare Worker that serves `web/` as static assets. Run it locally with:
 
 ```bash
 npx wrangler dev
 ```
-
-## Deploying
-
-The site is a Cloudflare Worker with static assets and no Worker script: `wrangler.jsonc` points it at `web/` and puts it on the `pocketduel.com` custom domain. Workers Builds deploys `main` on every push.
